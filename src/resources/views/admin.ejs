@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <!-- Nội dung chính -->
+  <div class="container-fluid mt-4">
+    <h4>Chào mừng bạn đến với Dashboard!</h4>
+    <div class="row mt-4">
+      <!-- Card 1: Số lượng nhân viên (RESMANAGER, WAITER, KITCHENSTAFF) -->
+      <div class="col-md-3">
+        <div class="card text-center mb-4">
+          <div class="card-body">
+            <h5 class="card-title"><%= totalEmployees %></h5>
+            <p class="card-text text-muted">Tổng số nhân viên</p>
+          </div>
+        </div>
+      </div>
+      <!-- Card 2: Số lượng bàn -->
+      <div class="col-md-3">
+        <div class="card text-center mb-4">
+          <div class="card-body">
+            <h5 class="card-title"><%= totalTables %></h5>
+            <p class="card-text text-muted">Tổng số bàn</p>
+          </div>
+        </div>
+      </div>
+      <!-- Card 3: Số lượng món ăn -->
+      <div class="col-md-3">
+        <div class="card text-center mb-4">
+          <div class="card-body">
+            <h5 class="card-title"><%= totalDishes %></h5>
+            <p class="card-text text-muted">Tổng số món ăn</p>
+          </div>
+        </div>
+      </div>
+      <!-- Card 4: Số lượng nguyên liệu -->
+      <div class="col-md-3">
+        <div class="card text-center mb-4">
+          <div class="card-body">
+            <h5 class="card-title"><%= totalIngredients %></h5>
+            <p class="card-text text-muted">Tổng số nguyên liệu</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Biểu đồ doanh thu -->
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card mb-4">
+          <div class="card-header">Doanh thu đặt đồ ăn theo tháng</div>
+          <div class="card-body">
+            <canvas id="revenueChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dữ liệu cho biểu đồ -->
+  <div id="revenue-data"
+       data-order-revenue='<%= orderRevenue %>'
+       style="display: none;"></div>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  <script>
+    const el = document.getElementById("revenue-data");
+    const orderRevenue = JSON.parse(el.dataset.orderRevenue);
+
+    // Chuẩn bị dữ liệu cho biểu đồ
+    const months = ["Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", 
+                    "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"];
+    const orderData = new Array(12).fill(0);
+
+    orderRevenue.forEach(item => {
+      orderData[item._id - 1] = item.total;
+    });
+
+    const ctx = document.getElementById("revenueChart").getContext("2d");
+    new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: months,
+        datasets: [
+          {
+            label: "Doanh thu thanh toán",
+            data: orderData,
+            backgroundColor: "#1cc88a",
+            borderColor: "#1cc88a",
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            display: true,
+            position: "top"
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return context.dataset.label + ": " + context.parsed.y.toLocaleString("vi-VN") + " VND";
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: "Doanh thu (VND)"
+            },
+            ticks: {
+              callback: value => value.toLocaleString("vi-VN")
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: "Tháng"
+            }
+          }
+        }
+      }
+    });
+  </script>
+
+  <!-- Bootstrap JS và Popper.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

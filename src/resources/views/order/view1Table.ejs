@@ -1,0 +1,156 @@
+<div class="d-flex gap-3 p-4" style="height: 90vh; overflow: hidden;">
+    <!-- Left Panel: Table Info -->
+    <div class="w-50 border p-4 rounded shadow-sm d-flex flex-column" style="height: 100%;">
+        <h2 class="h5 fw-bold mb-3">Bàn số <%= table.idTable %>
+        </h2>
+        <div class="flex-grow-1" style="overflow: auto;">
+            <table class="table table-bordered text-center" id="orderDataTable">
+                <thead>
+                    <tr>
+                        <th>Tên món ăn</th>
+                        <th>Số lượng</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+        </div>
+        <div class="row">
+            <div class="col-6" id="left-panel-total-price">
+                Tổng giá:
+            </div>
+            <div class="col-6">
+                <form class="thanh-toan" method="get">
+                    <button class="btn  btn-primary w-100" type="submit">Thanh toán</button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Right Panel: Menu List -->
+    <div class="w-50 border p-4 rounded shadow-sm d-flex flex-column" style="overflow: auto;">
+        <h2 class="h5 fw-bold mb-3">Thực đơn</h2>
+        <div class="row g-3">
+            <% menus.forEach(menu=> { %>
+                <div class="col-6 col-md-4">
+                    <div class="border rounded p-3 shadow-sm text-center">
+                        <img src="<%= menu.imageUrl %>" alt="<%= menu.foodName %>" class="img-fluid rounded"
+                            style="max-width: 100px; height: 80px; object-fit: cover;">
+                        <h3 class="h6 fw-semibold mt-2">
+                            <%= menu.foodName %>
+                        </h3>
+                        <p class="text-muted">
+                            <%= Number(menu.price) %> VND
+                        </p>
+                        <p class="text-<%=menu.statusFood === 'AVAILABLE' ? 'success': 'danger'%>">
+                            <%=menu.statusFood==='AVAILABLE' ? 'Còn món' : 'Đã hết' %>
+                        </p>
+                        <button onclick="removePrepareDishes('<%=menu._id%>', '<%=menu.price%>')"
+                            <%=menu.statusFood==='UNAVAILABLE' ? 'disabled' : '' %> class="btn btn-warning">-</button>
+                        <span id="number_dishes_<%=menu._id%>">0</span>
+                        <button onclick="addPrepareDishes('<%=menu._id%>', '<%=menu.price%>')"
+                            <%=menu.statusFood==='UNAVAILABLE' ? 'disabled' : '' %> class="btn btn-warning">+</button>
+                    </div>
+                </div>
+                <% }) %>
+        </div>
+        <div class="row g-3">
+            <button disabled onclick="add()" id="add" class="btn btn-success w-100 m-1">Thêm</button>
+        </div>
+    </div>
+</div>
+<script>
+    let addedDishes = [];
+    let toAddDished = [];
+    let toAddDishesPrice = 0;
+    let tableId = '<%= table._id %>'
+    const socket = new WebSocket("ws://localhost:3000");
+    socket.onopen = () => {
+        console.log("Connected to WebSocket server");
+    };
+
+    socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.hasOwnProperty('tableId') && data.tableId === tableId) {
+            getTableOrderInfo();
+        }
+    };
+
+    socket.onclose = () => {
+        console.log("Disconnected from WebSocket server");
+    };
+    getTableOrderInfo();
+    function addPrepareDishes(id, price) {
+        toAddDished.push(id);
+        toAddDishesPrice += price;
+        updatePrepareDishesNumber(id);
+        changeAddButton();
+    }
+    function removePrepareDishes(id, price) {
+        if (toAddDished.length === 0) return;
+        toAddDished.splice(toAddDished.indexOf(id), 1);
+        toAddDishesPrice -= price;
+        updatePrepareDishesNumber(id);
+        changeAddButton();
+    }
+    function countPrepareDishes(id) {
+        return toAddDished.filter(dish => dish === id).length;
+    }
+    function updatePrepareDishesNumber(id) {
+        let number = countPrepareDishes(id);
+        $("#number_dishes_" + id).text(number)
+    }
+    function changeAddButton() {
+        let btn = $('#add');
+        if (toAddDished.length === 0) {
+            btn.prop('disabled', true);
+            btn.text('Thêm')
+        } else {
+            btn.prop('disabled', false);
+            btn.text('Thêm ' + toAddDished.length + ' món ăn (' + toAddDishesPrice + ' VND)')
+        }
+    }
+    function add() {
+        const data = {
+            tableId: tableId,
+            dishes: toAddDished,
+        }
+        axios.post('/order', data)
+            .then((res) => {
+                if (res.status === 200) {
+                    toastr.success(res.data.message)
+                    toAddDished = [];
+                    toAddDishesPrice = 0;
+                    changeAddButton();
+                    getTableOrderInfo();
+                    $("span[id^='number_dishes_']").text(0);
+                    socket.send(1)
+                } else {
+                    toastr.success('Lỗi hệ thống.')
+                }
+            })
+    }
+    function getTableOrderInfo() {
+        axios.get('/order/order-of-table/' + tableId)
+            .then((res) => {
+                html = ''
+                let totalPrice = 0;
+                for (let i = 0; i < res.data.dishes.length; i++) {
+                    html += `<tr>` +
+                        `<td>${res.data.dishes[i].menuItem.foodName}</td>` +
+                        `<td>${res.data.dishes[i].quantity}</td>` +
+                        `<td>${res.data.dishes[i].statusOrder}</td>` +
+                        `</tr>`;
+                    totalPrice += res.data.dishes[i].quantity * Number(res.data.dishes[i].menuItem.price.$numberDecimal);
+                }
+                $("#orderDataTable tbody").html(html);
+                $(".thanh-toan").attr('action', '/payment/' + res.data._id + '/order');
+                $("#left-panel-total-price").text('Tổng giá: ' + totalPrice + ' VND')
+            }).catch((err) => {
+                toastr.error(err.response.data.message)
+            })
+    }
+</script>
