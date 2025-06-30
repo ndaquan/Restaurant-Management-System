@@ -43,7 +43,7 @@ exports.postSignUp = async (req, res, next) => {
         ? {
             subscription: {
               type: "TRIAL",
-              trialEnd: new Date(Date.now() - 60 * 1000),
+              trialEnd: new Date(Date.now() + 5 * 60 * 1000),
             },
           }
         : {};
