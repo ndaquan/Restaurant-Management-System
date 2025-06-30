@@ -15,6 +15,9 @@
             <%= typeof message !=='undefined' ? message: "" %>
         </h3>
         <form action="/auth/sign-up" method="post">
+            <% if (typeof trial !== "undefined" && trial === "true") { %>
+                <input type="hidden" name="trial" value="true" />
+            <% } %>
             <!-- <div class="form-control">
                 <input type="text" name="fullName" required>
                 <label>Họ và Tên</label>

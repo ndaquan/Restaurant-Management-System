@@ -11,7 +11,13 @@ class SiteController {
     if (req.session.user) {
       return res.redirect("/");
     }
-    res.render("register", { layout: "layouts/auth", title: "Register" });
+
+    const isTrial = req.query.trial === "true";
+    res.render("register", {
+      layout: "layouts/auth",
+      title: "Register",
+      trial: isTrial ? "true" : "false", 
+    });
   }
 
   home(req, res) {

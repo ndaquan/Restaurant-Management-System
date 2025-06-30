@@ -38,8 +38,8 @@ exports.postSignUp = async (req, res, next) => {
     const resetToken = crypto.randomBytes(32).toString("hex");
     const hashedToken = await bcrypt.hash(resetToken, 12);
 
-     const trial =
-      req.query.trial === "true"
+    const trial =
+      req.body.trial === "true"
         ? {
             subscription: {
               type: "TRIAL",
@@ -59,7 +59,12 @@ exports.postSignUp = async (req, res, next) => {
       ...trial,
     });
 
-    await sendMail(email, resetToken, true);
+    console.log("🚀 SUBSCRIPTION DEBUG:");
+console.log("req.query.trial:", req.query.trial);
+console.log("user.subscription:", user.subscription);
+console.log("user.subscription.trialEnd:", user.subscription?.trialEnd);
+
+    // await sendMail(email, resetToken, true);
     await user.save();
 
     res.render("login", {
