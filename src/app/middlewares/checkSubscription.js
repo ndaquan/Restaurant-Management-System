@@ -3,25 +3,26 @@ module.exports = (req, res, next) => {
 
   if (!user) return res.redirect("/auth/login");
 
-  // Nếu là trial và đã hết hạn
-  if (
-    user.subscription?.type === "TRIAL" &&
-    new Date() > new Date(user.subscription.trialEnd)
-  ) {
-    req.session.user.subscription.type = "EXPIRED";
-    // Huỷ session luôn nếu muốn đăng nhập lại mới cho rõ ràng
-    req.session.destroy(() => {
-      return res.redirect("/auth/login?expired=1");
+  const now = new Date();
+  const trialEnd = new Date(user.subscription?.trialEnd);
+
+  if (user.subscription?.type === "TRIAL" && now > trialEnd) {
+    req.session.destroy((err) => {
+      if (!res.headersSent) {
+        return res.redirect("/auth/login?expired=1");
+      }
     });
+    return;
   }
 
-  // Nếu đã hết hạn
   if (user.subscription?.type === "EXPIRED") {
-    req.session.destroy(() => {
-      return res.redirect("/auth/login?expired=1");
+    req.session.destroy((err) => {
+      if (!res.headersSent) {
+        return res.redirect("/auth/login?expired=1");
+      }
     });
+    return;
   }
 
-  // Cho truy cập nếu còn hạn
   next();
 };
