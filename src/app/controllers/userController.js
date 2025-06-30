@@ -52,7 +52,7 @@ exports.postSignUp = async (req, res, next) => {
       email,
       password: hashedPassword,
       phoneNumber: phone,
-      role: "CUSTOMER",
+      role: "RESOWNER",
       status: "INACTIVE",
       resetToken: hashedToken,
       resetTokenExpiration: Date.now() + 3600000,

@@ -26,12 +26,21 @@ const UserSchema = new Schema(
     resetToken: { type: String, required: false },
     resetTokenExpiration: { type: Date, required: false },
     subscription: {
-      type: {
-        type: String,
-        enum: ["TRIAL", "MONTHLY", "YEARLY", "EXPIRED"],
-        default: "TRIAL",
-      },
-      trialEnd: { type: Date },
+      type: new Schema(
+        {
+          type: {
+            type: String,
+            enum: ["TRIAL", "MONTHLY", "YEARLY", "EXPIRED"],
+            default: "TRIAL",
+          },
+          trialEnd: {
+            type: Date,
+            required: false,
+          },
+        },
+        { _id: false } // Không cần _id cho subdocument
+      ),
+      default: () => ({})
     },
   },
   { timestamps: true }
