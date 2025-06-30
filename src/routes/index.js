@@ -35,7 +35,7 @@ const editNewsRoutes = require('./editNewsRoutes');
 
   app.use("/restaurantInfor", isAuth.setUser,getFooterData, restaurantRouter);
   app.use("/auth", authRouter);
-  app.use("/", isAuth.requireAuth, isAuth.setUser, getFooterData, siteRouter);
+  app.use("/", isAuth.setUser, getFooterData, siteRouter);
   app.use('/order', orderRoutes);
   app.use('/admin', isAuth.setUser, adminRouter);
 
