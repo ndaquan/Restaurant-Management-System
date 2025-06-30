@@ -1,8 +1,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Netflix Login Page | CodingNepal</title>
-    <link rel="stylesheet" href="/css/login.css" />
+    <title>Đăng ký - Resly</title>
+    <link rel="stylesheet" href="/css/register.css" />
 </head>
 
 <body>
@@ -15,6 +15,10 @@
             <%= typeof message !=='undefined' ? message: "" %>
         </h3>
         <form action="/auth/sign-up" method="post">
+            <!-- <div class="form-control">
+                <input type="text" name="fullName" required>
+                <label>Họ và Tên</label>
+            </div> -->
             <div class="form-control">
                 <input type="email" name="email" required>
                 <label>Email </label>
@@ -36,9 +40,11 @@
                 <p style="color: red; padding-top: 8px; padding-bottom: 8px; font-size: 16px; text-align: center;">
                     <%= typeof error !=='undefined' ? error: "" %>
                 </p>
-                <% } %>
-                    <p style=" font-size: 16px; margin-top: 15px;">Bạn đã có tài khoản? <a href="/auth/login">Đăng nhập</a></p>
+            <% } %>
         </form>
+        <div class="back-home">
+           <a href="/"><- Quay lại trang chủ</a></p>
+        </div>
     </div>
 
 

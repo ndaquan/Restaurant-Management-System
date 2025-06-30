@@ -210,19 +210,19 @@ form .form-help :where(label, a) {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.form-extra-links {
-    display: flex;
-    justify-content: space-between;
+.back-home {
+    text-align: center;
     margin-top: 20px;
-    font-size: 0.95rem;
     color: #b3b3b3;
+    font-size: 0.95rem;
 }
 
-.form-extra-links a {
+.back-home a {
     color: #fff;
+    font-weight: 500;
     text-decoration: none;
 }
 
-.form-extra-links a:hover {
+.back-home a:hover {
     text-decoration: underline;
 }
