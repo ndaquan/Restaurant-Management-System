@@ -15,6 +15,7 @@ const menuRoutes = require("./menuRoutes");
 const payment = require("./paymentRoutes");
 const ingredientsRouter = require("./ingredientsRouter");
 const adminRouter = require("./adminRouter");
+const checkSubscription = require("../app/middlewares/checkSubscription")
 
 const orderRoutes = require('./orderRoutes');
 
@@ -37,7 +38,7 @@ const editNewsRoutes = require('./editNewsRoutes');
   app.use("/auth", authRouter);
   app.use("/", isAuth.setUser, getFooterData, siteRouter);
   app.use('/order', orderRoutes);
-  app.use('/admin', isAuth.setUser, adminRouter);
+  app.use('/admin', isAuth.setUser, checkSubscription, adminRouter);
 
   app.use("/bookingTable", bookingRouter);
   app.use("/payment", payment);

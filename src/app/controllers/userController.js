@@ -59,12 +59,7 @@ exports.postSignUp = async (req, res, next) => {
       ...trial,
     });
 
-    console.log("🚀 SUBSCRIPTION DEBUG:");
-console.log("req.query.trial:", req.query.trial);
-console.log("user.subscription:", user.subscription);
-console.log("user.subscription.trialEnd:", user.subscription?.trialEnd);
-
-    // await sendMail(email, resetToken, true);
+    await sendMail(email, resetToken, true);
     await user.save();
 
     res.render("login", {
@@ -129,11 +124,15 @@ exports.postSignIn = async (req, res, next) => {
         user.subscription.type = "EXPIRED";
         await user.save();
 
-        return res.render("login", {
-          layout: "layouts/auth",
-          title: "Login",
-          error: "Dùng thử đã hết hạn. Vui lòng chọn gói dịch vụ để tiếp tục.",
+        req.session.destroy(() => {
+          return res.render("login", {
+            layout: "layouts/auth",
+            title: "Login",
+            error: "Dùng thử đã hết hạn. Vui lòng chọn gói dịch vụ để tiếp tục.",
+          });
         });
+
+        return; 
       }
     }
 
