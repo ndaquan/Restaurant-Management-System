@@ -17,7 +17,7 @@ const UserSchema = new Schema(
     },
     role: {
       type: String,
-      enum: ["RESOWNER", "RESMANAGER", "WAITER", "KITCHENSTAFF", "CUSTOMER"],
+      enum: ["RESOWNER", "RESMANAGER", "WAITER", "KITCHENSTAFF", "CUSTOMER", "ADMIN"],
       required: true,
     },
     status: { type: String, enum: ["ACTIVE", "INACTIVE"], required: true },
@@ -25,6 +25,14 @@ const UserSchema = new Schema(
     googleId: { type: String, unique: true, sparse: true },
     resetToken: { type: String, required: false },
     resetTokenExpiration: { type: Date, required: false },
+    subscription: {
+      type: {
+        type: String,
+        enum: ["TRIAL", "MONTHLY", "YEARLY", "EXPIRED"],
+        default: "TRIAL",
+      },
+      trialEnd: { type: Date },
+    },
   },
   { timestamps: true }
 );

@@ -36,9 +36,17 @@ exports.postSignUp = async (req, res, next) => {
 
     const hashedPassword = await bcrypt.hash(password, 12);
     const resetToken = crypto.randomBytes(32).toString("hex");
-    console.log(resetToken);
-
     const hashedToken = await bcrypt.hash(resetToken, 12);
+
+     const trial =
+      req.query.trial === "true"
+        ? {
+            subscription: {
+              type: "TRIAL",
+              trialEnd: new Date(Date.now() - 60 * 1000),
+            },
+          }
+        : {};
 
     const user = new User({
       email,
@@ -48,6 +56,7 @@ exports.postSignUp = async (req, res, next) => {
       status: "INACTIVE",
       resetToken: hashedToken,
       resetTokenExpiration: Date.now() + 3600000,
+      ...trial,
     });
 
     await sendMail(email, resetToken, true);
@@ -109,9 +118,27 @@ exports.postSignIn = async (req, res, next) => {
       });
     }
 
+    if (user.subscription?.type === "TRIAL") {
+      const now = new Date();
+      if (now > new Date(user.subscription.trialEnd)) {
+        user.subscription.type = "EXPIRED";
+        await user.save();
+
+        return res.render("login", {
+          layout: "layouts/auth",
+          title: "Login",
+          error: "Dùng thử đã hết hạn. Vui lòng chọn gói dịch vụ để tiếp tục.",
+        });
+      }
+    }
+
     req.session.user = { ...user.toObject() };
     delete req.session.user.password;
+
     req.session.save(() => {
+    if (user.role === "ADMIN") {
+      return res.redirect("/owner");   
+    }
     if (user.role === "RESOWNER" || user.role === "RESMANAGER") {
       return res.redirect("/admin");   
     }
