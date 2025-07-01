@@ -6,9 +6,9 @@ const menuController = require("../app/controllers/EditMenuController");
 const isAuth = require("../app/middlewares/is-auth");
 const isPermissions = require("../app/middlewares/isPermissions");
 
-router.get("/", menuController.getList);
-router.get("/detail/:id", menuController.renderDetailDish);
-router.delete("/:id", menuController.deleteDish);
+router.get("/", isAuth.requireAuth, menuController.getList);
+router.get("/detail/:id", isAuth.requireAuth, menuController.renderDetailDish);
+router.delete("/:id", isAuth.requireAuth, menuController.deleteDish);
 router.get(
   "/add",
   isAuth.requireAuth,
@@ -47,11 +47,11 @@ router.put(
   isPermissions(["RESOWNER"]),
   menuController.updateDish
 );
-router.get(
-  "/search",
-  isAuth.requireAuth,
-  isPermissions(["RESOWNER"]),
-  menuController.searchDish
-);
+// router.get(
+//   "/search",
+//   isAuth.requireAuth,
+//   isPermissions(["RESOWNER"]),
+//   menuController.searchDish
+// );
 
 module.exports = router;

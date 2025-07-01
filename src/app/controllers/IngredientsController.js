@@ -3,10 +3,17 @@ const Ingredient = require("../models/Ingredient");
 
 /* ---------- DANH SÁCH ---------- */
 exports.list = async (req, res) => {
-  const search = (req.query.search || "").trim();        
-  const filter = search
-      ? { name: { $regex: search, $options: "i" } }       
-      : {};
+  const search = (req.query.search || "").trim();  
+  const restaurantId = req.user.restaurant;
+
+  const filter = {
+    restaurant: restaurantId
+  };
+
+  if (search) {
+    filter.name = { $regex: search, $options: "i" };
+  }
+
   const ingredients = await Ingredient.find(filter);
   res.render("editIngredient", {
     layout: "layouts/mainAdmin",
@@ -28,8 +35,25 @@ exports.renderCreate = (req, res) => {
 
 exports.create = async (req, res) => {
   const { name, quantity, unit, note } = req.body;
+  const restaurantId = req.user.restaurant;
+
+  const existing = await Ingredient.findOne({ name, restaurant: restaurantId });
+  if (existing) {
+    return res.render("createIngredient", {
+      layout: "layouts/mainAdmin",
+      title: "Thêm nguyên liệu",
+      errorMessage: "Nguyên liệu đã tồn tại trong kho của nhà hàng này"
+    });
+  }
+
   try {
-    await Ingredient.create({ name, quantity, unit, note });
+    await Ingredient.create({
+      name,
+      quantity,
+      unit,
+      note,
+      restaurant: restaurantId
+    });
     res.redirect("/admin/editIngredient?successMessage=Thêm nguyên liệu thành công");
   } catch (err) {
     res.render("createIngredient", {
@@ -42,7 +66,11 @@ exports.create = async (req, res) => {
 
 /* ---------- SỬA ---------- */
 exports.renderEdit = async (req, res) => {
-  const ing = await Ingredient.findById(req.params.id);
+  const ing = await Ingredient.findOne({
+    _id: req.params.id,
+    restaurant: req.user.restaurant
+  });
+
   if (!ing) return res.redirect("/admin/editIngredient?errorMessage=Không tìm thấy nguyên liệu");
   res.render("editIngredientForm", {
     layout: "layouts/mainAdmin",
@@ -61,21 +89,22 @@ exports.update = async (req, res) => {
   const bothFilled = importQty && exportQty;     // cả hai ô đều có giá trị
   const bothEmpty  = !importQty && !exportQty;   // cả hai ô rỗng
 
+  const baseUrl = `/admin/editIngredient/edit/${req.params.id}`;
+
   if (bothFilled) {
     return res.redirect(`${baseUrl}?errorMessage=Chỉ điền 1 ô Xuất hoặc Nhập`);
   }
 
-  if (!bothEmpty) {          // chỉ khi nhập 1 ô thì kiểm tra âm/dương
-    if (importNum < 0 || exportNum < 0) {
-      return res.redirect(`${baseUrl}?errorMessage=Số lượng phải dương`);
-    }
-  }
-  if (importNum < 0 || exportNum < 0) {
-    return res.redirect(`/admin/editIngredient/edit/${req.params.id}?errorMessage=Số lượng phải dương`);
+  if (bothEmpty && (importNum < 0 || exportNum < 0)) {
+    return res.redirect(`${baseUrl}?errorMessage=Số lượng phải dương`);
   }
 
   /* Tính tồn kho mới */
-  const ing = await Ingredient.findById(req.params.id);
+  const ing = await Ingredient.findOne({
+    _id: req.params.id,
+    restaurant: req.user.restaurant
+  });
+
   if (!ing) return res.redirect("/admin/editIngredient?errorMessage=Không tìm thấy nguyên liệu");
 
   let newQty = ing.quantity;
@@ -83,7 +112,7 @@ exports.update = async (req, res) => {
   if (exportQty) newQty -= exportNum;
 
   if (newQty < 0) {
-    return res.redirect(`/admin/editIngredient/edit/${req.params.id}?errorMessage=Tồn kho không đủ để xuất`);
+    return res.redirect(`${baseUrl}?errorMessage=Tồn kho không đủ để xuất`);
   }
 
   /* Cập nhật */
@@ -99,6 +128,9 @@ exports.update = async (req, res) => {
 
 /* ---------- XOÁ ---------- */
 exports.remove = async (req, res) => {
-  await Ingredient.findByIdAndDelete(req.params.id);
+  await Ingredient.findOneAndDelete({
+    _id: req.params.id,
+    restaurant: req.user.restaurant
+  });
   res.redirect("/admin/editIngredient?successMessage=Xoá thành công");
 };

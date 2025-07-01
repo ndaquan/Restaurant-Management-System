@@ -1,6 +1,8 @@
 const Table = require("../models/Table");
 const Menu = require("../models/Menu");
 const Order = require("../models/OrderFood");
+const mongoose = require("mongoose")
+
 exports.viewAllTables = async (req, resp) => {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0); // Đặt thời gian về 00:00:00
@@ -8,10 +10,20 @@ exports.viewAllTables = async (req, resp) => {
   const todayEnd = new Date();
   todayEnd.setHours(23, 59, 59, 999); // Đặt thời gian về 23:59:59
 
+  const user = req.session.user;
+    if (!user) {
+      return resp.status(401).send("Chưa đăng nhập.");
+    }
+
   const tables = await Table.aggregate([
     {
+      $match: {
+        restaurant: new mongoose.Types.ObjectId(req.user.restaurant),
+      }
+    },
+    {
       $lookup: {
-        from: "orders", // Tên collection của Order trong MongoDB
+        from: "orders",
         localField: "_id",
         foreignField: "table",
         as: "orders",
@@ -53,21 +65,23 @@ exports.viewAllTables = async (req, resp) => {
     },
     {
       $project: {
-        orders: 0, // Ẩn danh sách orders, chỉ lấy thông tin bàn và trạng thái sử dụng
+        orders: 0,
       },
     },
   ]);
   resp.render("order/tables", { tables, layout: "layouts/mainAdmin" });
 };
+
 exports.viewATable = async (req, resp) => {
   const tableId = req.params.tableId;
-  const table = await Table.findOne({ idTable: tableId });
+  const table = await Table.findOne({ idTable: tableId, restaurant: req.user.restaurant });
   if (!table) {
     return resp.status(404).send("Table not found");
   }
-  const menus = await Menu.find().populate("category");
+  const menus = await Menu.find({ restaurant: req.user.restaurant }).populate("category");
   resp.render("order/view1Table", { table, menus, layout: "layouts/mainAdmin" });
 };
+
 exports.addDishes2Table = async (req, resp) => {
   const { tableId, dishes } = req.body;
   const countMap = dishes.reduce((acc, dishId) => {
@@ -77,11 +91,11 @@ exports.addDishes2Table = async (req, resp) => {
 
   const uniqueDishId = Object.keys(countMap);
   const counts = Object.values(countMap);
-  const addDishes = await Menu.find({ _id: { $in: uniqueDishId } });
+  const addDishes = await Menu.find({ _id: { $in: uniqueDishId } , restaurant: req.user.restaurant } );
   const sortedDishes = uniqueDishId.map((id) =>
     addDishes.find((dish) => dish._id.toString() === id)
   );
-  const table = await Table.findOne({ _id: tableId });
+  const table = await Table.findOne({ _id: tableId , restaurant: req.user.restaurant });
   if (!table) {
     return resp.status(404).send("Table not found with id: " + tableId);
   }
@@ -111,6 +125,7 @@ exports.addDishes2Table = async (req, resp) => {
         dishes: dishes2Add,
         statusPayment: "Pending",
         paymentMethod: "Cash",
+        restaurant: req.user.restaurant,
       });
       await newOrder.save();
     } else {
@@ -137,14 +152,16 @@ exports.addDishes2Table = async (req, resp) => {
       dishes: dishes2Add,
       statusPayment: "Pending",
       paymentMethod: "Cash",
+      restaurant: req.user.restaurant,
     });
     await newOrder.save();
   }
   resp.json({ message: "Thêm món ăn thành công." });
 };
+
 exports.getOrderOfTableID = async (req, resp) => {
   const tableId = req.params.tableId;
-  const orders = await Order.find({ table: tableId, statusPayment: "Pending" })
+  const orders = await Order.find({ table: tableId, statusPayment: "Pending", restaurant: req.user.restaurant })
     .populate("dishes.menuItem")
     .populate("table")
     .populate("bookingTable");
@@ -158,6 +175,7 @@ exports.getOrderOfTableID = async (req, resp) => {
   }
   return resp.json(orders[0]);
 };
+
 exports.chefViewDishes = async (req, resp) => {
   try {
     const startOfDay = new Date();
@@ -174,13 +192,14 @@ exports.chefViewDishes = async (req, resp) => {
       },
       {
         $match: {
-          firstDishOrderDate: { $gte: startOfDay, $lte: endOfDay }, // Filter orders for today
+          firstDishOrderDate: { $gte: startOfDay, $lte: endOfDay },
+          restaurant: new mongoose.Types.ObjectId(req.user.restaurant)
         },
       },
       { $unwind: "$dishes" }, // Unwind dishes
       { $sort: { "dishes.orderDate": 1 } }, // Sort by orderDate (oldest to latest)
     ]);
-    resp.render("order/chef", { layout: "layouts/mainAdmin" });
+    resp.render("order/chef", { layout: "layouts/mainAdmin", orders });
   } catch (error) {
     console.error("Error fetching orders:", error);
   }
@@ -201,7 +220,8 @@ exports.chefGetDishesOfDay = async (req, resp) => {
       },
       {
         $match: {
-          firstDishOrderDate: { $gte: startOfDay, $lte: endOfDay }, // Filter orders for today
+          // firstDishOrderDate: { $gte: startOfDay, $lte: endOfDay },
+          restaurant: new mongoose.Types.ObjectId(req.user.restaurant)
         },
       },
       {
@@ -231,9 +251,10 @@ exports.chefGetDishesOfDay = async (req, resp) => {
     console.error("Error fetching orders:", error);
   }
 };
+
 exports.chefChangeDishStatus = async (req, resp) => {
   const { orderId, dishId, status } = req.body;
-  const order = await Order.findById(orderId);
+  const order = await Order.findOne({ _id: orderId, restaurant: req.user.restaurant });
   if (!order) {
     return resp.status(500).json({ error: "Order not found" });
   }
@@ -245,11 +266,12 @@ exports.chefChangeDishStatus = async (req, resp) => {
   await order.save();
   return resp.json({ message: "Change dish status successfully" });
 };
+
 exports.deleteDish = async (req, res) => {
     try {
         const { orderId, dishId } = req.params;
 
-        const order = await Order.findById(orderId);
+        const order = await Order.findOne({ _id: orderId, restaurant: req.user.restaurant });
         if (!order) return res.status(404).json({ error: "Không tìm thấy đơn hàng" });
 
         order.dishes = order.dishes.filter(d => d._id.toString() !== dishId);

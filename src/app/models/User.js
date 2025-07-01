@@ -42,6 +42,10 @@ const UserSchema = new Schema(
       ),
       default: () => ({})
     },
+    restaurant: {
+      type: Schema.Types.ObjectId,
+      ref: "RestaurantInfor"
+    }
   },
   { timestamps: true }
 );

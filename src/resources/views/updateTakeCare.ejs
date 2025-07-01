@@ -17,39 +17,14 @@
         <form class="form-update-takecare" action="/admin/takeCare/update/<%= takeCare._id %>" method="POST" onsubmit="return validateForm()">
             
             <div class="form-group">
-                <label for="staffId">Nhân Viên:</label>
-                <select class="form-select-update" name="staffId" id="staffId" required>
-                    <% if (staffs && staffs.length > 0) { %>
-                        <% staffs.forEach(staff => { %>
-                            <option value="<%= staff._id %>" 
-                                    data-role="<%= staff.role %>" 
-                                    <%= takeCare.staff && staff._id.toString() === takeCare.staff._id.toString() ? "selected" : "" %> >
-                                <%= staff.firstName %> <%= staff.lastName %> - <%= staff.email %> (<%= staff.role %>)
-                            </option>
-                        <% }); %>
-                    <% } else { %>
-                        <option value="" disabled>Không có nhân viên nào</option>
-                    <% } %>
-                </select>
-            </div>
-
-            <!-- Danh sách bàn dưới dạng checkbox (ẩn mặc định) -->
-            <div class="form-group" id="tableSelection" style="display: none;">
-                <label>Chọn Bàn:</label>
-                <div class="checkbox-group">
-                    <% if (tables && tables.length > 0) { %>
-                        <% tables.forEach(table => { %>
-                            <label class="checkbox-label">
-                                <input type="checkbox" name="tableIds" value="<%= table.idTable %>" 
-                                    <%= takeCare.table.includes(table.idTable) ? "checked" : "" %> >
-                                <span class="checkbox-custom"></span>
-                                <%= table.idTable %>
-                            </label>
-                        <% }); %>
-                    <% } else { %>
-                        <p class="no-tables">Không có bàn nào</p>
-                    <% } %>
-                </div>
+                <label>Nhân Viên:</label>
+                <input
+                    type="text"
+                    class="form-control"
+                    value="<%= takeCare.staff.firstName %> <%= takeCare.staff.lastName %> - <%= takeCare.staff.email %> (<%= takeCare.staff.role %>)"
+                    readonly
+                    style="background-color: #f5f5f5; cursor: not-allowed;"
+                />
             </div>
 
             <div class="form-group">
@@ -78,26 +53,6 @@
     </div>
 
     <script>
-        // Hàm kiểm tra vai trò nhân viên và hiển thị/ẩn form chọn bàn
-        function toggleTableSelection() {
-            const staffSelect = document.getElementById('staffId');
-            const tableSelection = document.getElementById('tableSelection');
-            const selectedOption = staffSelect.options[staffSelect.selectedIndex];
-            const role = selectedOption ? selectedOption.getAttribute('data-role') : '';
-
-            // Hiển thị form chọn bàn nếu vai trò là WAITER, ẩn nếu không phải
-            if (role === 'WAITER') {
-                tableSelection.style.display = 'block';
-            } else {
-                tableSelection.style.display = 'none';
-                // Bỏ tick tất cả các checkbox khi vai trò không phải WAITER
-                const checkboxes = document.querySelectorAll("input[name='tableIds']");
-                checkboxes.forEach(checkbox => {
-                    checkbox.checked = false;
-                });
-            }
-        }
-
         // Hàm validate form
         function validateForm() {
             const staffSelect = document.getElementById('staffId');
@@ -136,23 +91,10 @@
                 return false;
             }
 
-            // Chỉ yêu cầu chọn bàn nếu vai trò là WAITER
-            if (role === 'WAITER') {
-                const checkboxes = document.querySelectorAll("input[name='tableIds']:checked");
-                if (checkboxes.length === 0) {
-                    alert("Vui lòng chọn ít nhất một bàn.");
-                    return false;
-                }
-            }
-
             return true;
         }
 
-        // Lắng nghe sự kiện thay đổi trên dropdown staffId
-        document.getElementById('staffId').addEventListener('change', toggleTableSelection);
-
-        // Gọi hàm toggleTableSelection khi trang được tải để kiểm tra nhân viên ban đầu
-        document.addEventListener('DOMContentLoaded', toggleTableSelection);
+        document.addEventListener('DOMContentLoaded', () => {});
     </script>
 </body>
 </html>

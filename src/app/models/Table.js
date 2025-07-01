@@ -11,6 +11,9 @@ const TableSchema = new Schema({
     updatedAt: { type: Date, default: Date.now },
     status: { type: String, enum: ['AVAILABLE', 'RESERVED', 'OCCUPIED'], required: true },
     type: {type: String, enum: ['NORMAL', 'VIP'] , required: true},
+    restaurant: { type: mongoose.Schema.Types.ObjectId, ref: 'RestaurantInfor', required: true },
 });
+
+TableSchema.index({ idTable: 1, restaurant: 1 }, { unique: true });
 
 module.exports = mongoose.model("Table", TableSchema);

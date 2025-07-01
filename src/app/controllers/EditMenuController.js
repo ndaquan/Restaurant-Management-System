@@ -6,7 +6,7 @@ const cloudinary = require('../../config/cloudinary/index')
 
 exports.getList = async (req, res) => {
   try {
-    const menus = await Menu.find().populate('category');
+    const menus = await Menu.find({ restaurant: req.user.restaurant }).populate('category');
     res.render('editMenu', { menus, layout: 'layouts/mainAdmin' });
   } catch (error) {
     res.status(500).send(error.message);
@@ -15,7 +15,7 @@ exports.getList = async (req, res) => {
 
 exports.renderDetailDish = async (req, res) => {
   try {
-    const dish = await Menu.findById(req.params.id).populate('category');
+    const dish = await Menu.findOne({ _id: req.params.id, restaurant: req.user.restaurant }).populate('category');
     if (!dish) {
       return res.status(404).send("Món ăn không tồn tại");
     }
@@ -29,7 +29,10 @@ exports.renderDetailDish = async (req, res) => {
 exports.deleteDish = async (req, res) => {
   try {
     const dishId = req.params.id;
-    const deletedDish = await Menu.findByIdAndDelete(dishId);
+    const deletedDish = await Menu.findOneAndDelete({
+      _id: dishId,
+      restaurant: req.user.restaurant,
+    });
     if (!deletedDish) {
       return res.status(404).json({ error: 'Dish not found' });
     }
@@ -72,6 +75,8 @@ exports.createDish = async (req, res) => {
         const dishImageUrl = result.secure_url;
         console.log("Ảnh món ăn:", dishImageUrl);
 
+        const restaurantId = req.user.restaurant;
+
         // Tạo món ăn mới với URL ảnh từ Cloudinary
         const newDish = new Menu({
           foodName: req.body.foodName,
@@ -80,7 +85,8 @@ exports.createDish = async (req, res) => {
           imageUrl: dishImageUrl,
           statusFood: "AVAILABLE",
           // Nếu cần, set category mặc định hoặc lấy từ form:
-          category: req.body.category
+          category: req.body.category,
+          restaurant: restaurantId, 
         });
 
         newDish.save()
@@ -107,7 +113,7 @@ exports.createDish = async (req, res) => {
 
 exports.renderEditForm = async (req, res) => {
   try {
-    const dish = await Menu.findById(req.params.id);
+    const dish = await Menu.findOne({ _id: req.params.id, restaurant: req.user.restaurant });
     const categories = await CategoryFood.find();
     if (!dish) return res.status(404).send('Dish not found');
     res.render('editDish', { dish, categories, layout: 'layouts/mainAdmin' });
@@ -119,6 +125,7 @@ exports.renderEditForm = async (req, res) => {
 exports.updateDish = async (req, res) => {
   try {
     const dishId = req.params.id;
+    const restaurantId = req.user.restaurant;
     // Chuẩn bị dữ liệu cập nhật từ form
     let updateData = {
       foodName: req.body.foodName,
@@ -145,7 +152,7 @@ exports.updateDish = async (req, res) => {
           // Lấy URL mới từ Cloudinary
           updateData.imageUrl = result.secure_url;
           // Cập nhật món ăn với dữ liệu mới
-          const updatedDish = await Menu.findByIdAndUpdate(dishId, updateData, { new: true });
+          const updatedDish = await Menu.findByIdAndUpdate({ _id: dishId, restaurant: restaurantId }, updateData, { new: true });
           if (!updatedDish) {
             return res.status(404).json({ success: false, message: "Món ăn không tồn tại!" });
           }
@@ -159,7 +166,7 @@ exports.updateDish = async (req, res) => {
       bufferStream.pipe(uploadStream);
     } else {
       // Nếu không có file mới, cập nhật trực tiếp với updateData (bao gồm imageUrl cũ từ form)
-      const updatedDish = await Menu.findByIdAndUpdate(dishId, updateData, { new: true });
+      const updatedDish = await Menu.findByIdAndUpdate({ _id: dishId, restaurant: restaurantId }, updateData, { new: true });
       if (!updatedDish) {
         return res.status(404).json({ success: false, message: "Món ăn không tồn tại!" });
       }
@@ -171,14 +178,14 @@ exports.updateDish = async (req, res) => {
   }
 };
 
-exports.searchDish = async (req, res) => {
-  try {
-    const { q } = req.query;
-    const dishes = await Menu.find({
-      foodName: { $regex: q, $options: 'i' }  // tìm kiếm không phân biệt hoa thường
-    }).populate('category');
-      res.status(200).json(dishes);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+// exports.searchDish = async (req, res) => {
+//   try {
+//     const { q } = req.query;
+//     const dishes = await Menu.find({
+//       foodName: { $regex: q, $options: 'i' }  // tìm kiếm không phân biệt hoa thường
+//     }).populate('category');
+//       res.status(200).json(dishes);
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// };

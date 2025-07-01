@@ -10,6 +10,7 @@ const MenuSchema = new Schema({
   starRating: { type: Number },
   statusFood: { type: String, enum: ["AVAILABLE", "UNAVAILABLE"], required: true },
   category: {type: mongoose.Schema.Types.ObjectId, ref: 'CategoryFood', required: true},
+  restaurant: { type: mongoose.Schema.Types.ObjectId, ref: 'RestaurantInfor', required: true },
 });
 
 module.exports = mongoose.model('Menu', MenuSchema);

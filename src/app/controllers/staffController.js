@@ -6,12 +6,22 @@ const { genarateResetToken } = require("../../util");
 const mongoose = require("mongoose");
 
 exports.getStaffs = async (req, res) => {
+    console.log("🔍 req.user =", req.user);
     try {
+        if (!req.user || !req.user.restaurant) {
+            return res.status(403).render("errorpage", {
+                message: "Không xác định được nhà hàng người dùng."
+            });
+        }
+
         const searchQuery = req.query.search ? req.query.search.trim() : ""; 
         const roleFilter = req.query.role && req.query.role.trim() !== "" ? req.query.role.trim() : null; 
 
         // Loại bỏ cả CUSTOMER và RESOWNER
-        let queryCondition = { role: { $nin: ["CUSTOMER", "RESOWNER"] } };
+        let queryCondition = {
+            role: { $nin: ["CUSTOMER", "RESOWNER"] },
+            restaurant: req.user.restaurant
+        };
 
         if (searchQuery) {
             queryCondition.$or = [
@@ -64,7 +74,10 @@ exports.getStaffDetail = async (req, res) => {
     const { userId } = req.params;
     try {
         // Tìm nhân viên theo userId
-        const staff = await User.findById(userId);
+        const staff = await User.findById({
+            _id: userId,
+            restaurant: req.user.restaurant
+        });
         if (!staff) {
             console.log("❌ Nhân viên không tồn tại:", userId);
             return res.render("errorpage", { message: "Nhân viên không tồn tại" });
@@ -111,9 +124,30 @@ exports.updateStaff = async (req, res) => {
 
     try {
         // Tìm nhân viên theo userId
-        const staff = await User.findById(userId);
+        const staff = await User.findOne({
+            _id: userId,
+            restaurant: req.user.restaurant 
+        });
+
         if (!staff) {
             return res.render("errorpage", { message: "Nhân viên không tồn tại" });
+        }
+
+        // Kiểm tra nếu email mới đã tồn tại ở nhân viên khác trong cùng nhà hàng
+        const emailConflict = await User.findOne({
+            email,
+            restaurant: req.user.restaurant,
+            _id: { $ne: userId } 
+        });
+
+        if (emailConflict) {
+            return res.render("updateInfoStaff", {
+                layout: "layouts/mainAdmin",
+                title: "Cập nhật thông tin nhân viên",
+                staff,
+                salary: (await StaffInfor.findOne({ staff: userId }))?.salary || "Chưa cập nhật",
+                errorMessage: "Email này đã được dùng bởi nhân viên khác trong nhà hàng",
+            });
         }
 
         // Cập nhật thông tin nhân viên
@@ -163,7 +197,10 @@ exports.update = async (req, res) => {
 
     try {
         // Tìm nhân viên theo userId
-        const staff = await User.findById(userId);
+        const staff = await User.findOne({
+            _id: userId,
+            restaurant: req.user.restaurant 
+        });
         if (!staff) {
             console.log("❌ Nhân viên không tồn tại:", userId);
             return res.render("errorpage", { message: "Nhân viên không tồn tại" });
@@ -192,7 +229,10 @@ exports.createStaff = async (req, res) => {
 
     try {
         // 1️⃣ Kiểm tra xem email đã tồn tại chưa
-        const existingUser = await User.findOne({ email });
+        const existingUser = await User.findOne({ 
+            email,
+            restaurant: req.user.restaurant 
+        });
         if (existingUser) {
             return res.render("createStaff", {
                 layout: "layouts/mainAdmin",
@@ -229,6 +269,7 @@ exports.createStaff = async (req, res) => {
             phoneNumber: phone,
             role: selectedRole,
             status: "ACTIVE",
+            restaurant: req.user.restaurant,
         });
 
         // 6️⃣ Lưu nhân viên vào database
@@ -269,12 +310,13 @@ exports.createStaff = async (req, res) => {
 };
 
 
-
-
 exports.lockStaff = async (req, res) => {
     const { id } = req.params;
     try {
-        const user = await User.findById(id);
+        const user = await User.findOne({
+            _id: id,
+            restaurant: req.user.restaurant 
+        });
         if (!user) {
             return res.render("errorpage", { message: "Nhân viên không tồn tại" });
         }

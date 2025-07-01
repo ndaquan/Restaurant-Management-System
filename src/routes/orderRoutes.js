@@ -27,13 +27,13 @@ router.get(
   isPermissions(["RESOWNER", "KITCHENSTAFF", "WAITER", "RESMANAGER"]),
   orderController.viewATable
 );
-router.post("/", orderController.addDishes2Table);
-router.get("/order-of-table/:tableId", orderController.getOrderOfTableID);
+router.post("/", isAuth.requireAuth, orderController.addDishes2Table);
+router.get("/order-of-table/:tableId", isAuth.requireAuth, orderController.getOrderOfTableID);
 router.put(
   "/change-dish-status",
   isAuth.requireAuth,
   isPermissions(["RESOWNER", "KITCHENSTAFF", "WAITER", "RESMANAGER"]),
   orderController.chefChangeDishStatus
 );
-router.delete("/delete-dish/:orderId/:dishId", orderController.deleteDish);
+router.delete("/delete-dish/:orderId/:dishId", isAuth.requireAuth, orderController.deleteDish);
 module.exports = router;

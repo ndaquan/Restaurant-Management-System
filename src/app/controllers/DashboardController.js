@@ -6,27 +6,32 @@ const Order = require("../models/OrderFood");
 
 exports.getDashboard = async (req, res) => {
   try {
+    const restaurantId = req.user?.restaurant;
+    if (!restaurantId) {
+      return res.status(400).send("Thiếu thông tin nhà hàng trong user.");
+    }
+
     // Lấy số lượng nhân viên (user có role RESMANAGER, WAITER, hoặc KITCHENSTAFF)
     const totalEmployees = await User.countDocuments({
-      role: { $in: ["RESMANAGER", "WAITER", "KITCHENSTAFF"] }
+      role: { $in: ["RESMANAGER", "WAITER", "KITCHENSTAFF"] }, restaurant: restaurantId
     });
     console.log("Total employees:", totalEmployees);
     
     // Lấy số lượng bàn
-    const totalTables = await Table.countDocuments();
+    const totalTables = await Table.countDocuments({ restaurant: restaurantId });
     console.log("Total tables:", totalTables);
     
     // Lấy số lượng món ăn
-    const totalDishes = await Menu.countDocuments();
+    const totalDishes = await Menu.countDocuments({ restaurant: restaurantId });
     console.log("Total dishes:", totalDishes);
     
     // Lấy số lượng nguyên liệu
-    const totalIngredients = await Ingredient.countDocuments();
+    const totalIngredients = await Ingredient.countDocuments({ restaurant: restaurantId });
     console.log("Total ingredients:", totalIngredients);
 
     // Pipeline cho Order (doanh thu từ đặt đồ ăn)
     const orderRevenue = await Order.aggregate([
-      { $match: { statusPayment: "Paid" } },
+      { $match: { statusPayment: "Paid", restaurant: restaurantId } },
       {
         $unwind: "$dishes" // Mở rộng mảng dishes
       },

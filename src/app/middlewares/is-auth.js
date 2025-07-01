@@ -1,9 +1,12 @@
 module.exports = {
   requireAuth: (req, res, next) => {
-    if (!req.session.user) {
+    const user = req.session.user;
+    if (!user) {
       return res.redirect("/auth/login");
     }
-    res.locals.user = req.session.user || null;
+
+    req.user = user; 
+    res.locals.user = user; 
     next();
   },
 
@@ -13,8 +16,8 @@ module.exports = {
   },
 
   checkRoleOwner: (req, res, next) => {
-    if (!req.session.user || req.session.user.role!== "RESOWNER") {
-      return res.redirect('/');
+    if (!req.session.user || req.session.user.role !== "RESOWNER") {
+      return res.redirect("/");
     }
     next();
   }

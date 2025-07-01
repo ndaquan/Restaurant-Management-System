@@ -1,17 +1,17 @@
 const TakeCare = require('../models/TakeCare');
-const Table = require('../models/Table');
 const User = require('../models/User');
 
 exports.renderCreateTakeCare = async (req, res) => {
     try {
-        const staffs = await User.find({ role: { $in: ["WAITER", "KITCHENSTAFF", "RESMANAGER"] } });
-        const tables = await Table.find({}, 'idTable'); 
-
+        const staffs = await User.find({
+            role: { $in: ["WAITER", "KITCHENSTAFF", "RESMANAGER"] },
+            restaurant: req.user.restaurant  
+        });
+        
         res.render('createTakeCare', { 
             layout: "layouts/mainAdmin",
             title: "Tạo lịch làm",
             staffs,
-            tables,
             errorMessage: null 
         });
     } catch (error) {
@@ -22,71 +22,29 @@ exports.renderCreateTakeCare = async (req, res) => {
 
 exports.createTakeCare = async (req, res) => {
     try {
-        let { tableIds, staffId, date, startTime, endTime } = req.body;
+        let { staffId, date, startTime, endTime } = req.body;
 
 
         if (!staffId || !date || !startTime || !endTime) {
             return res.render('createTakeCare', {
                 layout: "layouts/mainAdmin",
                 title: "Tạo TakeCare",
-                staffs: await User.find({ role: { $in: ["WAITER", "KITCHENSTAFF", "RESMANAGER"] } }),
-                tables: await Table.find({}, 'idTable'),
+                staffs: await User.find({ role: { $in: ["WAITER", "KITCHENSTAFF", "RESMANAGER"] },  restaurant: req.user.restaurant }),
                 errorMessage: "Vui lòng điền đầy đủ thông tin (nhân viên, ngày, giờ bắt đầu, giờ kết thúc)."
             });
         }
 
-
-        if (!tableIds) {
-            tableIds = [];
-        } else {
-            if (!Array.isArray(tableIds)) {
-                try {
-                    tableIds = JSON.parse(tableIds);
-                } catch (error) {
-                    tableIds = [tableIds]; 
-                }
-            }
-        }
-
-        
-        const staffMember = await User.findById(staffId);
+        const staffMember = await User.findOne({ _id: staffId, restaurant: req.user.restaurant });
         if (!staffMember || !["WAITER", "KITCHENSTAFF", "RESMANAGER"].includes(staffMember.role)) {
             return res.render('createTakeCare', {
                 layout: "layouts/mainAdmin",
                 title: "Tạo TakeCare",
-                staffs: await User.find({ role: { $in: ["WAITER", "KITCHENSTAFF", "RESMANAGER"] } }),
-                tables: await Table.find({}, 'idTable'),
+                staffs: await User.find({ role: { $in: ["WAITER", "KITCHENSTAFF", "RESMANAGER"] }, restaurant: req.user.restaurant }),
                 errorMessage: "Nhân viên không hợp lệ hoặc không thuộc vai trò WAITER, KITCHENSTAFF, hoặc RESMANAGER."
             });
         }
-
         
-        if (staffMember.role === "WAITER" && tableIds.length === 0) {
-            return res.render('createTakeCare', {
-                layout: "layouts/mainAdmin",
-                title: "Tạo TakeCare",
-                staffs: await User.find({ role: { $in: ["WAITER", "KITCHENSTAFF", "RESMANAGER"] } }),
-                tables: await Table.find({}, 'idTable'),
-                errorMessage: "Nhân viên phục vụ (WAITER) phải chọn ít nhất một bàn."
-            });
-        }
-
-        
-        if (tableIds.length > 0) {
-            const tables = await Table.find({ idTable: { $in: tableIds } });
-            if (tables.length !== tableIds.length) {
-                return res.render('createTakeCare', {
-                    layout: "layouts/mainAdmin",
-                    title: "Tạo TakeCare",
-                    staffs: await User.find({ role: { $in: ["WAITER", "KITCHENSTAFF", "RESMANAGER"] } }),
-                    tables: await Table.find({}, 'idTable'),
-                    errorMessage: "Một hoặc nhiều bàn không tồn tại. Vui lòng kiểm tra lại."
-                });
-            }
-        }
-
         const newTakeCare = new TakeCare({
-            table: tableIds, 
             staff: staffMember._id,
             date,
             startTime,
@@ -101,7 +59,6 @@ exports.createTakeCare = async (req, res) => {
             layout: "layouts/mainAdmin",
             title: "Tạo TakeCare",
             staffs: await User.find({ role: { $in: ["WAITER", "KITCHENSTAFF", "RESMANAGER"] } }),
-            tables: await Table.find({}, 'idTable'),
             errorMessage: "Lỗi máy chủ. Vui lòng thử lại sau."
         });
     }
@@ -109,24 +66,13 @@ exports.createTakeCare = async (req, res) => {
 
 exports.getTakeCares = async (req, res) => {
     try {
-        console.log("Đang lấy danh sách TakeCare...");
-
-    
-        const takeCares = await TakeCare.find()
-            .populate('staff'); 
-
+        const takeCares = (await TakeCare.find().populate({
+            path: 'staff',
+            match: { restaurant: req.user.restaurant }
+        })).filter(tc => tc.staff);
  
-        const tables = await Table.find({}, 'idTable'); 
-        const tableMap = new Map(tables.map(table => [table.idTable, table.idTable]));
-
-
         takeCares.forEach(tc => {
-            tc.tableNames = tc.table.map(tId => tableMap.get(tId) || "Không có thông tin bàn");
-        });
-
-        console.log("Lấy thành công danh sách TakeCare:");
-        takeCares.forEach(tc => {
-            console.log(`ID: ${tc._id}, Bàn: ${tc.tableNames.join(", ")}, Nhân viên: ${tc.staff ? tc.staff.firstName + " " + tc.staff.lastName : "Không có nhân viên"}`);
+            console.log(`ID: ${tc._id}, Nhân viên: ${tc.staff ? tc.staff.firstName + " " + tc.staff.lastName : "Không có nhân viên"}`);
         });
 
         res.render('viewTakeCare', { 
@@ -140,39 +86,30 @@ exports.getTakeCares = async (req, res) => {
     }
 };
 
-
-
 exports.renderUpdateTakeCare = async (req, res) => {
     try {
         const { id } = req.params;
 
-       
         const takeCare = await TakeCare.findById(id)
             .populate('staff'); 
 
-        if (!takeCare) {
-            console.warn(`Cảnh báo: Lịch làm với ID ${id} không tồn tại.`);
+        if (!takeCare || String(takeCare.staff?.restaurant) !== String(req.user.restaurant)) {
             return res.render("errorpage", {
-                message: "Lịch làm không tồn tại.",
+                message: "Lịch làm không tồn tại hoặc không thuộc nhà hàng của bạn.",
                 layout: "layouts/mainAdmin",
             });
         }
 
-        const staffs = await User.find({ role: { $in: ["WAITER", "KITCHENSTAFF", "RESMANAGER"] } });
-
+        const staffs = await User.find({
+            role: { $in: ["WAITER", "KITCHENSTAFF", "RESMANAGER"] },
+            restaurant: req.user.restaurant
+        });
         
-        const tables = await Table.find({}, 'idTable');
-
-        console.log(`Đang cập nhật lịch làm: ID ${id}`);
-        console.log(`Nhân viên: ${takeCare.staff ? takeCare.staff.firstName + " " + takeCare.staff.lastName : "Không có nhân viên"}`);
-        console.log(`Bàn hiện tại: ${takeCare.table ? takeCare.table.join(", ") : "Không có bàn"}`);
-
         res.render('updateTakeCare', { 
             layout: "layouts/mainAdmin",
             title: "Chỉnh sửa lịch làm",
             takeCare,
             staffs,
-            tables, 
             errorMessage: null 
         });
     } catch (error) {
@@ -186,83 +123,52 @@ exports.renderUpdateTakeCare = async (req, res) => {
 exports.updateTakeCare = async (req, res) => {
     try {
         const { id } = req.params;
-        let { tableIds, staffId, date, startTime, endTime } = req.body;
+        let { staffId, date, startTime, endTime } = req.body;
 
-        if (!tableIds) {
-            tableIds = []; 
-        } else if (!Array.isArray(tableIds)) {
-            tableIds = [tableIds]; 
+        const takeCare = await TakeCare.findById(id).populate('staff');
+        if (!takeCare || String(takeCare.staff?.restaurant) !== String(req.user.restaurant)) {
+            return res.render("errorpage", {
+                message: "Lịch làm không tồn tại hoặc không thuộc nhà hàng của bạn.",
+                layout: "layouts/mainAdmin",
+            });
         }
-
         
         if (!staffId || !date || !startTime || !endTime) {
-            const takeCare = await TakeCare.findById(id).populate('table').populate('staff');
-            const staffs = await User.find({ role: { $in: ["WAITER", "KITCHENSTAFF", "RESMANAGER"] } });
-            const tables = await Table.find({}, 'idTable');
+            const staffs = await User.find({
+                role: { $in: ["WAITER", "KITCHENSTAFF", "RESMANAGER"] },
+                restaurant: req.user.restaurant
+            });
             return res.render('updateTakeCare', {
                 layout: "layouts/mainAdmin",
                 title: "Chỉnh sửa lịch làm",
                 takeCare,
                 staffs,
-                tables,
                 errorMessage: "Vui lòng điền đầy đủ thông tin (ngày, giờ bắt đầu, giờ kết thúc, nhân viên)."
             });
         }
-
        
-        const staffMember = await User.findById(staffId);
+        const staffMember = await User.findOne({
+            _id: staffId,
+            restaurant: req.user.restaurant
+        });
+
         if (!staffMember || !["WAITER", "KITCHENSTAFF", "RESMANAGER"].includes(staffMember.role)) {
-            const takeCare = await TakeCare.findById(id).populate('table').populate('staff');
-            const staffs = await User.find({ role: { $in: ["WAITER", "KITCHENSTAFF", "RESMANAGER"] } });
-            const allTables = await Table.find({}, 'idTable');
+            const staffs = await User.find({
+                role: { $in: ["WAITER", "KITCHENSTAFF", "RESMANAGER"] },
+                restaurant: req.user.restaurant
+            });
             return res.render('updateTakeCare', {
                 layout: "layouts/mainAdmin",
                 title: "Chỉnh sửa lịch làm",
                 takeCare,
                 staffs,
-                tables: allTables,
                 errorMessage: "Nhân viên không hợp lệ hoặc không thuộc vai trò WAITER, KITCHENSTAFF, hoặc RESMANAGER."
             });
         }
-
         
-        if (staffMember.role === "WAITER" && tableIds.length === 0) {
-            const takeCare = await TakeCare.findById(id).populate('table').populate('staff');
-            const staffs = await User.find({ role: { $in: ["WAITER", "KITCHENSTAFF", "RESMANAGER"] } });
-            const tables = await Table.find({}, 'idTable');
-            return res.render('updateTakeCare', {
-                layout: "layouts/mainAdmin",
-                title: "Chỉnh sửa lịch làm",
-                takeCare,
-                staffs,
-                tables,
-                errorMessage: "Nhân viên phục vụ (WAITER) phải chọn ít nhất một bàn."
-            });
-        }
-
-        
-        if (tableIds.length > 0) {
-            const tables = await Table.find({ idTable: { $in: tableIds } });
-            if (tables.length !== tableIds.length) {
-                const takeCare = await TakeCare.findById(id).populate('table').populate('staff');
-                const staffs = await User.find({ role: { $in: ["WAITER", "KITCHENSTAFF", "RESMANAGER"] } });
-                const allTables = await Table.find({}, 'idTable');
-                return res.render('updateTakeCare', {
-                    layout: "layouts/mainAdmin",
-                    title: "Chỉnh sửa lịch làm",
-                    takeCare,
-                    staffs,
-                    tables: allTables,
-                    errorMessage: "Một hoặc nhiều bàn không tồn tại. Vui lòng nhập ID bàn hợp lệ."
-                });
-            }
-        }
-
-       
         const updatedTakeCare = await TakeCare.findByIdAndUpdate(
             id,
             {
-                table: tableIds, 
                 staff: staffMember._id,
                 date,
                 startTime,
@@ -278,24 +184,20 @@ exports.updateTakeCare = async (req, res) => {
             });
         }
 
-        console.log(`Cập nhật thành công lịch làm với ID: ${id}`);
-        console.log(`Bàn mới: ${tableIds.length > 0 ? tableIds.join(", ") : "Không có bàn"}`);
-        console.log(`Nhân viên: ${staffMember.firstName} ${staffMember.lastName} (${staffMember.role})`);
-        console.log(`Ngày: ${date}`);
-        console.log(`Thời gian: ${startTime} - ${endTime}`);
-
         return res.redirect('/admin/takeCare');
     } catch (error) {
         console.error("Lỗi khi cập nhật TakeCare:", error);
-        const takeCare = await TakeCare.findById(id).populate('table').populate('staff');
-        const staffs = await User.find({ role: { $in: ["WAITER", "KITCHENSTAFF", "RESMANAGER"] } });
-        const tables = await Table.find({}, 'idTable');
+        const takeCare = await TakeCare.findById(id).populate('staff');
+        const staffs = await User.find({
+            role: { $in: ["WAITER", "KITCHENSTAFF", "RESMANAGER"] },
+            restaurant: req.user.restaurant
+        });
+        
         return res.render('updateTakeCare', {
             layout: "layouts/mainAdmin",
             title: "Chỉnh sửa lịch làm",
             takeCare,
             staffs,
-            tables,
             errorMessage: "Lỗi máy chủ. Vui lòng thử lại sau."
         });
     }
@@ -306,11 +208,11 @@ exports.updateTakeCare = async (req, res) => {
 exports.deleteTakeCare = async (req, res) => {
     try {
         const { id } = req.params;
-        const takeCare = await TakeCare.findById(id);
+        const takeCare = await TakeCare.findById(id).populate('staff');
 
-        if (!takeCare) {
+        if (!takeCare || String(takeCare.staff?.restaurant) !== String(req.user.restaurant)) {
             return res.render("errorpage", {
-                message: "Lịch làm không tồn tại.",
+                message: "Lịch làm không tồn tại hoặc không thuộc nhà hàng của bạn.",
                 layout: "layouts/mainAdmin",
             });
         }
@@ -332,7 +234,7 @@ exports.getStaffSchedule = async (req, res) => {
     try {
         const { userId } = req.params; 
 
-        const staff = await User.findById(userId);
+        const staff = await User.findOne({ _id: userId, restaurant: req.user.restaurant });
         if (!staff) {
             console.log("Nhân viên không tồn tại:", userId);
             return res.render("errorpage", {
@@ -343,19 +245,10 @@ exports.getStaffSchedule = async (req, res) => {
 
         const takeCares = await TakeCare.find({ staff: userId })
             .populate('staff'); 
-
-        
-        const tables = await Table.find({}, 'idTable');
-        const tableMap = new Map(tables.map(table => [table.idTable, table.idTable]));
-
        
-        takeCares.forEach(tc => {
-            tc.tableNames = tc.table.map(tId => tableMap.get(tId) || "Không có thông tin bàn");
-        });
-
         console.log(`Lấy thành công lịch làm của nhân viên: ${staff.firstName} ${staff.lastName}`);
         takeCares.forEach(tc => {
-            console.log(`ID: ${tc._id}, Bàn: ${tc.tableNames.join(", ")}, Ngày: ${tc.date}, Thời gian: ${tc.startTime} - ${tc.endTime}`);
+            console.log(`ID: ${tc._id}, Ngày: ${tc.date}, Thời gian: ${tc.startTime} - ${tc.endTime}`);
         });
 
         res.render('viewStaffSchedule', {
@@ -377,20 +270,14 @@ exports.renderDetailTakeCare = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const takeCare = await TakeCare.findById(id)
-            .populate('staff'); 
+        const takeCare = await TakeCare.findById(id).populate('staff');
 
-        if (!takeCare) {
-            console.warn(`Cảnh báo: Lịch làm với ID ${id} không tồn tại.`);
+        if (!takeCare || String(takeCare.staff?.restaurant) !== String(req.user.restaurant)) {
             return res.render("errorpage", {
-                message: "Lịch làm không tồn tại.",
+                message: "Lịch làm không tồn tại hoặc không thuộc nhà hàng của bạn.",
                 layout: "layouts/mainAdmin",
             });
         }
-
-        console.log(`Đang xem chi tiết lịch làm: ID ${id}`);
-        console.log(`Nhân viên: ${takeCare.staff ? takeCare.staff.firstName + " " + takeCare.staff.lastName : "Không có nhân viên"}`);
-        console.log(`Bàn: ${takeCare.table ? takeCare.table.join(", ") : "Không có bàn"}`);
 
         res.render('detailTakeCare', { 
             layout: "layouts/mainAdmin",

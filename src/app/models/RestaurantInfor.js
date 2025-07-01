@@ -3,17 +3,22 @@ const { Schema } = mongoose;
 
 const RestaurantInforSchema = new Schema({
   restaurantName: { type: String, required: true },
-  address: { type: String, required: true },
-  openingHours: { type: Date, required: true },
-  closingHours: { type: Date, required: true },
-  openingDay: { type: String, required: true },
-  closingDay: { type: String, required: true },
-  bannerUrl: { type: String, required: false },
-  hotline: { type: String, required: true },
-  email: { type: String, required: true },
-  social: [{ type: String, required: true }],
-  graphicTable: { type: String, required: true },
-
+  address: { type: String, required: false },
+  openingHours: { type: Date, required: false },
+  closingHours: { type: Date, required: false },
+  openingDay: { type: String, required: false },
+  closingDay: { type: String, required: false },
+  bannerUrl: { type: String },
+  hotline: { type: String, required: false },
+  email: { type: String, required: false },
+  social: [{ type: String }],
+  graphicTable: { type: String, required: false },
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+    unique: true,
+  }
 });
 
 module.exports = mongoose.model('RestaurantInfor', RestaurantInforSchema);

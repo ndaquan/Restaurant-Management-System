@@ -10,7 +10,7 @@ exports.getTables = async (req, res) => {
         const searchQuery = req.query.search ? req.query.search.trim() : "";
         const typeFilter = req.query.type ? req.query.type.trim() : "";
         
-        let queryCondition = {};
+        let queryCondition = { restaurant: req.user.restaurant };
         if (searchQuery) {
             queryCondition.$or = [
                 { idTable: { $regex: new RegExp(searchQuery, "i") } },
@@ -39,7 +39,7 @@ exports.getTables = async (req, res) => {
 exports.getTableDetail = async (req, res) => {
     const { tableId } = req.params;
     try {
-        const table = await Table.findById(tableId);
+        const table = await Table.findById({ _id: tableId, restaurant: req.user.restaurant });
         if (!table) {
             return res.render("errorpage", { message: "Bàn không tồn tại" });
         }
@@ -55,17 +55,10 @@ exports.getTableDetail = async (req, res) => {
 };
 
 exports.updateTable = async (req, res) => {
-    console.log('Reached updateTable controller'); 
-    console.log('req.params:', req.params); 
-    console.log('req.body:', req.body);
-    console.log('req.file:', req.file); 
-
     const { tableId } = req.params;
     const { seatNumber, description, depositPrice, status, type } = req.body;
 
-    
     if (!seatNumber || !depositPrice || !status || !type) {
-        console.error('Missing required fields');
         return res.render('editTable', {
             layout: 'layouts/mainAdmin',
             title: 'Chỉnh sửa bàn',
@@ -76,14 +69,12 @@ exports.updateTable = async (req, res) => {
     }
 
     try {
-        const table = await Table.findById(tableId);
+        const table = await Table.findById({ _id: tableId, restaurant: req.user.restaurant });
         if (!table) {
-            console.error('Table not found:', tableId);
             return res.render('errorpage', { message: 'Bàn không tồn tại' });
         }
 
         let newImageUrl = table.imageUrl; 
-
        
         if (req.file) {
             try {
@@ -97,7 +88,6 @@ exports.updateTable = async (req, res) => {
                     );
                     uploadStream.end(req.file.buffer);
                 });
-
                 
                 if (table.imageUrl) {
                     const publicId = table.imageUrl.split('/').pop().split('.')[0];
@@ -111,7 +101,6 @@ exports.updateTable = async (req, res) => {
             }
         }
 
-        
         table.seatNumber = parseInt(seatNumber, 10); 
         table.description = description || ''; 
         table.imageUrl = newImageUrl;
@@ -149,10 +138,8 @@ exports.createTables = async (req, res) => {
             imageUrl = result.secure_url;
         }
 
-        
         const formattedStatus = status.toUpperCase();
         const formattedType = type.toUpperCase();
-
         
         if (!['AVAILABLE', 'RESERVED', 'OCCUPIED'].includes(formattedStatus)) {
             return res.render("addTable", { 
@@ -179,7 +166,8 @@ exports.createTables = async (req, res) => {
             imageUrl,
             depositPrice,
             status: formattedStatus,
-            type: formattedType
+            type: formattedType,
+            restaurant: req.user.restaurant
         });
 
         await newTable.save();
@@ -195,7 +183,12 @@ exports.createTables = async (req, res) => {
             layout: "layouts/mainAdmin",
             title: "Thêm Bàn Mới",
             errorMessage: "Có lỗi xảy ra khi thêm bàn.",
-            idTable, seatNumber, description, depositPrice, status, type
+            idTable: req.body?.idTable || "",
+            seatNumber: req.body?.seatNumber || "",
+            description: req.body?.description || "",
+            depositPrice: req.body?.depositPrice || "",
+            status: req.body?.status || "AVAILABLE",
+            type: req.body?.type || "NORMAL"
         });
     }
 };
@@ -204,7 +197,7 @@ exports.createTables = async (req, res) => {
 exports.deleteTable = async (req, res) => {
     const { tableId } = req.params;
     try {
-        await Table.findByIdAndDelete(tableId);
+        await Table.findByIdAndDelete({ _id: tableId, restaurant: req.user.restaurant });
         return res.redirect("/admin/tables");
     } catch (error) {
         console.error("Lỗi khi xóa bàn:", error);
@@ -214,7 +207,7 @@ exports.deleteTable = async (req, res) => {
 
 exports.getEditTableForm = async (req, res) => {
     try {
-        const table = await Table.findById(req.params.tableId);
+        const table = await Table.findById({ _id: req.params.tableId, restaurant: req.user.restaurant });
         if (!table) {
             return res.render("errorpage", { message: "Bàn không tồn tại" });
         }

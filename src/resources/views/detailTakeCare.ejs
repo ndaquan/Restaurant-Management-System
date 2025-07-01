@@ -17,7 +17,6 @@
             <p><strong>Ngày làm:</strong> <%= takeCare.date ? new Date(takeCare.date).toISOString().split('T')[0] : "Không có ngày" %></p>
             <p><strong>Giờ bắt đầu:</strong> <%= takeCare.startTime || "Không có giờ bắt đầu" %></p>
             <p><strong>Giờ kết thúc:</strong> <%= takeCare.endTime || "Không có giờ kết thúc" %></p>
-            <p><strong>Bàn phục vụ:</strong> <%= takeCare.table && takeCare.table.length > 0 ? takeCare.table.join(", ") : "Không có bàn" %></p>
         </div>
 
         <div class="button-group">

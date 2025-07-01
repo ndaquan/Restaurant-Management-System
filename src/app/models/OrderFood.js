@@ -36,6 +36,11 @@ const orderSchema = new Schema({
     enum: ["Cash", "Card"],
     required: true,
   },
+  restaurant: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "RestaurantInfor",
+    required: true,
+  }
 });
 
 module.exports = mongoose.model("Order", orderSchema);

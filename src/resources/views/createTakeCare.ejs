@@ -31,25 +31,6 @@
                 </select>
             </div>
 
-            <!-- Danh sách bàn dưới dạng checkbox (ẩn mặc định) -->
-            <div class="form-group" id="tableSelection" style="display: none;">
-                <label>Chọn Bàn:</label>
-                <div class="checkbox-group">
-                    <% if (tables && tables.length > 0) { %>
-                        <% tables.forEach(table => { %>
-                            <label class="checkbox-label">
-                                <input type="checkbox" class="table-checkbox" name="tableIds" value="<%= table.idTable %>">
-                                <span class="checkbox-custom"></span>
-                                <%= table.idTable %>
-                            </label>
-                        <% }); %>
-                    <% } else { %>
-                        <p class="no-tables">Không có bàn nào</p>
-                    <% } %>
-                </div>
-                <input type="hidden" name="selectedTables" id="selectedTables">
-            </div>
-
             <div class="form-group">
                 <label for="date">Ngày:</label>
                 <input type="date" class="form-control-takecare" name="date" id="date" required>
@@ -73,23 +54,6 @@
     </div>
 
     <script>
-        // Hàm kiểm tra vai trò nhân viên và hiển thị/ẩn form chọn bàn
-        function toggleTableSelection() {
-            const staffSelect = document.getElementById('staffId');
-            const tableSelection = document.getElementById('tableSelection');
-            const selectedOption = staffSelect.options[staffSelect.selectedIndex];
-            const role = selectedOption ? selectedOption.getAttribute('data-role') : '';
-
-            // Hiển thị form chọn bàn nếu vai trò là WAITER, ẩn nếu không phải
-            if (role === 'WAITER') {
-                tableSelection.style.display = 'block';
-            } else {
-                tableSelection.style.display = 'none';
-                console.log('Table selection is displayed');
-            }
-        }
-                console.log('Table selection is hidden');
-
         // Hàm validate form
         function validateForm() {
             const staffSelect = document.getElementById('staffId');
@@ -128,30 +92,10 @@
                 return false;
             }
 
-            // Chỉ yêu cầu chọn bàn nếu vai trò là WAITER
-            if (role === 'WAITER') {
-                const checkboxes = document.querySelectorAll(".table-checkbox:checked");
-                const selectedTables = Array.from(checkboxes).map(cb => cb.value);
-
-                if (selectedTables.length === 0) {
-                    alert("Vui lòng chọn ít nhất một bàn.");
-                    return false;
-                }
-
-                document.getElementById("selectedTables").value = JSON.stringify(selectedTables);
-            } else {
-                // Nếu không phải WAITER, gán mảng rỗng cho selectedTables
-                document.getElementById("selectedTables").value = JSON.stringify([]);
-            }
-
             return true;
         }
 
-        // Lắng nghe sự kiện thay đổi trên dropdown staffId
-        document.getElementById('staffId').addEventListener('change', toggleTableSelection);
-
-        // Gọi hàm toggleTableSelection khi trang được tải để kiểm tra nhân viên ban đầu
-        document.addEventListener('DOMContentLoaded', toggleTableSelection);
+        document.addEventListener('DOMContentLoaded', () => {});
     </script>
 </body>
 </html>
