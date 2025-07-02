@@ -49,8 +49,6 @@ router(app);
 const paymentController = require('./app/controllers/PaymentController');
 app.get('/payment-success', paymentController.paymentSuccessPage);
 
-app.use("/owner", ownerRoutes);
-
 // WebSocket server logic
 wss.on("connection", (ws) => {
   ws.on("message", (message) => {

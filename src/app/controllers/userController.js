@@ -173,7 +173,7 @@ exports.postSignUp = async (req, res, next) => {
         email,
         password: hashedPassword,
         phoneNumber: phone,
-        firstname: restaurantOwnerName,
+        firstName: restaurantOwnerName,
         role: "RESOWNER",
         status: "INACTIVE",
         resetToken: hashedToken,
@@ -303,7 +303,7 @@ exports.postSignIn = async (req, res, next) => {
 
     req.session.save(() => {
       if (user.role === "ADMIN") {
-        return res.redirect("/owner");   
+        return res.redirect("/owner/adminNews");   
       }
       if (user.role === "RESOWNER") {
         return res.redirect("/admin");   

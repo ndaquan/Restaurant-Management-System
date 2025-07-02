@@ -83,7 +83,7 @@
       const isSubscription = type === "monthly" || type === "yearly";
       const isOrder = type === "order";
 
-      const description = isSubscription ? `${user._id}-${type}` : (bookingTable._id || '');
+      const description = isSubscription ? `${user._id}${type}` : (bookingTable._id || '');
     %>
 </head>
 

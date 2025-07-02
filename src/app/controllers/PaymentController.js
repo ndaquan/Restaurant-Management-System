@@ -11,52 +11,81 @@ const TEST_MODE = true;
 
   exports.checkPaid = async (req, res) => {
     try {
-      const description = req.params.description?.trim();
-      const amount = parseInt(req.query.amount);
+       const description = req.params.description?.trim();
+      let amount = parseInt(req.query.amount);
 
-      console.log("Checking payment - Description:", description, "Amount:", amount);
+      // console.log("👉 Full Request URL:", req.originalUrl);
+      // console.log("👉 req.params.description:", req.params.description);
+      // console.log("👉 Sau trim:", description);
 
       if (!description || isNaN(amount)) {
-        console.log("Invalid input: Missing description or amount");
+        // console.log("❌ Thiếu mô tả hoặc amount không hợp lệ");
         return res.status(400).json({
           success: false,
           message: "Thiếu thông tin mô tả hoặc giá trị thanh toán",
         });
       }
 
+      amount = amount * 1000;
+      // console.log("🔢 Amount sau khi nhân 1000:", amount);
+
       const response = await fetch("https://script.google.com/macros/s/AKfycbxl0dXum3tft_meYCEfi5Bl0e-bXiVlmjJQIkUmLAdG64kSNEFdU2kfTjdxSqKiEQWu/exec");
       if (!response.ok) {
-        console.error("Failed to fetch payment data from Google Script, Status:", response.status);
+        // console.error("❌ Lỗi khi fetch từ Google Script, Status:", response.status);
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
       const { data: transactions } = await response.json();
+      // console.log("📥 Dữ liệu giao dịch từ Google Script:", transactions);
 
-      console.log("Fetched transactions from Google Script:", transactions);
       if (!Array.isArray(transactions) || transactions.length === 0) {
-        console.log("No transactions found in response");
+        // console.log("❌ Không có giao dịch nào");
         return res.status(404).json({
           success: false,
           message: "Không có dữ liệu giao dịch",
         });
       }
 
-      const cleanedDescription = description.replace(/-/g, "").toLowerCase();
+      function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      }
 
-      const matchedTransaction = transactions.find(
-        (tx) =>
-          tx["Mô tả"]?.replace(/\s/g, "").toLowerCase().includes(cleanedDescription) &&
-          Number(tx["Giá trị"]) === amount
-      );
+      const cleanedDescription = description.replace(/-/g, "").toLowerCase();
+      
+      transactions.forEach((tx, idx) => {
+        const rawDesc = tx["Mô tả"];
+        const cleaned = rawDesc?.replace(/\s/g, "").toLowerCase();
+        // console.log(`[#${idx}] Mô tả gốc:`, rawDesc);
+        // console.log(`[#${idx}] Mô tả đã clean:`, cleaned);
+        // console.log("---");
+      });
+
+      const matchedTransaction = transactions.find((tx, idx) => {
+        const rawDescription = tx["Mô tả"] || "";
+        const cleanedTxDescription = rawDescription.replace(/\s/g, "").toLowerCase();
+
+        const escaped = escapeRegExp(cleanedDescription);
+        const endsWithPattern = new RegExp(`${escaped}$`);
+        const isMatch = endsWithPattern.test(cleanedTxDescription);
+        const isAmountMatch = Number(tx["Giá trị"]) === amount;
+
+        // console.log(`[MatchCheck] Giao dịch #${idx}`);
+        // console.log(`  - endsWith: ${isMatch}`);
+        // console.log(`  - amountMatch: ${isAmountMatch}`);
+        // console.log(`  - TxAmount: ${tx["Giá trị"]}, Expected: ${amount}`);
+        // console.log("---");
+
+        return isMatch && isAmountMatch;
+      });
 
       if (!matchedTransaction) {
-        console.log(`❌ No matching transaction for ${cleanedDescription} & ${amount}`);
+        // console.log(`❌ Không tìm thấy giao dịch phù hợp với ${cleanedDescription} & ${amount}`);
         return res.status(200).json({ success: true, isPaid: false });
       }
 
       // Tách guestId và plan từ mô tả đã khớp
       const rawDesc = matchedTransaction["Mô tả"].replace(/\s/g, "").toLowerCase();
-      const match = rawDesc.match(/([a-f0-9]{16})(monthly|yearly)/);
+      const match = rawDesc.match(/([a-z0-9]+)(monthly|yearly)/);
 
       if (match) {
         const guestId = match[1];
@@ -67,7 +96,8 @@ const TEST_MODE = true;
           { paid: true }
         );
 
-        console.log("✅ Thanh toán gói thành công!", { guestId, planType });
+        // console.log("✅ Thanh toán gói thành công!", { guestId, planType });
+
         return res.status(200).json({
           success: true,
           isPaid: true,
@@ -258,8 +288,12 @@ const TEST_MODE = true;
       }
       const guestId = req.session.guestId;
 
-      const description = `${guestId}-${plan}`;
+      const description = `${guestId}${plan}`;
       const qrUrl = `https://img.vietqr.io/image/970415-108884575134-compact.png?amount=${amount}&addInfo=${description}`;
+
+      console.log(`[QR tạo thanh toán] GuestId: ${guestId}`);
+console.log(`[QR tạo thanh toán] Description (no dash): ${description}`);
+console.log(`[QR tạo thanh toán] QR URL: ${qrUrl}`);
 
       const existingLog = await SubscriptionLog.findOne({ guestId, plan });
       if (!existingLog) {

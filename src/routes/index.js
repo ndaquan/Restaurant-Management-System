@@ -27,12 +27,14 @@ const editMenuRoutes = require('./editMenuRoutes');
 const takeCareRouter = require('./takecareRouter');
 const newsRoutes = require('./newsRoutes');
 const editNewsRoutes = require('./editNewsRoutes');
+const ownerRoutes = require('./ownerRouter')
 
   function routes(app) {
   app.use('/news',isAuth.setUser, getFooterData, newsRoutes);
   app.use('/owner/adminNews', isAuth.setUser, editNewsRoutes);
   app.use('/menu',isAuth.setUser, getFooterData, menuRoutes);
   app.use('/admin/editMenu', isAuth.setUser, editMenuRoutes);
+  app.use('/owner', isAuth.setUser, ownerRoutes);
 
   app.use("/restaurantInfor", isAuth.setUser,getFooterData, restaurantRouter);
   app.use("/auth", authRouter);

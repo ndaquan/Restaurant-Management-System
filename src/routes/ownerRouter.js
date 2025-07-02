@@ -1,8 +1,21 @@
 const express = require("express");
 const router = express.Router();
-const { getOwnerDashboard } = require("../app/controllers/OwnerController");
+const ownerController = require("../app/controllers/OwnerController");
 const isAuth = require("../app/middlewares/is-auth");
+const isPermissions = require("../app/middlewares/isPermissions");
 
-router.get("/", isAuth.requireAuth, getOwnerDashboard);
+router.get(
+  "/users",
+  isAuth.requireAuth,
+  isPermissions(["ADMIN"]),
+  ownerController.getResOwnerDashboard
+);
+
+router.post(
+  "/toggle/:id",
+  isAuth.requireAuth,
+  isPermissions(["ADMIN"]),
+  ownerController.toggleStatus
+);
 
 module.exports = router;
