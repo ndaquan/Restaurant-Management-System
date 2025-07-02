@@ -174,7 +174,7 @@
       transition: background-color 0.3s ease;
     }
     .pricing-card .cta-button:hover {
-      background-color: #000000; /* Lightens to a slightly brighter red on hover */
+      background-color: #ff0000; /* Lightens to a slightly brighter red on hover */
     }
     .testimonials {
       padding: 60px 20px;
