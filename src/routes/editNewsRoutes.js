@@ -8,63 +8,63 @@ const isPermissions = require("../app/middlewares/isPermissions");
 router.get(
   "/",
   isAuth.requireAuth,
-  isPermissions(["RESOWNER"]),
+  isPermissions(["ADMIN"]),
   newsController.getList
 );
 router.get(
   "/detail/:id",
   isAuth.requireAuth,
-  isPermissions(["RESOWNER"]),
+  isPermissions(["ADMIN"]),
   newsController.renderDetailNews
 );
 router.delete(
   "/:id",
   isAuth.requireAuth,
-  isPermissions(["RESOWNER"]),
+  isPermissions(["ADMIN"]),
   newsController.deleteNews
 );
 router.get(
   "/add",
   isAuth.requireAuth,
-  isPermissions(["RESOWNER"]),
+  isPermissions(["ADMIN"]),
   newsController.renderCreateForm
 );
 router.get(
   "/edit/:id",
   isAuth.requireAuth,
-  isPermissions(["RESOWNER"]),
+  isPermissions(["ADMIN"]),
   newsController.renderEditForm
 );
 router.put(
   "/:id",
   isAuth.requireAuth,
-  isPermissions(["RESOWNER"]),
+  isPermissions(["ADMIN"]),
   upload.single("image"),
   newsController.updateNews
 );
 router.post(
   "/",
   isAuth.requireAuth,
-  isPermissions(["RESOWNER"]),
+  isPermissions(["ADMIN"]),
   upload.single("image"),
   newsController.createNews
 );
 router.delete(
   "/",
   isAuth.requireAuth,
-  isPermissions(["RESOWNER"]),
+  isPermissions(["ADMIN"]),
   newsController.deleteNews
 );
 router.put(
   "/",
   isAuth.requireAuth,
-  isPermissions(["RESOWNER"]),
+  isPermissions(["ADMIN"]),
   newsController.updateNews
 );
 router.get(
   "/search",
   isAuth.requireAuth,
-  isPermissions(["RESOWNER"]),
+  isPermissions(["ADMIN"]),
   newsController.searchNews
 );
 

@@ -39,78 +39,91 @@
       </a>
       <!-- Menu -->
       <ul class="list-unstyled components mt-3">
-        <% if (user.role == 'RESOWNER' || user.role == "RESMANAGER") { %>
-        <li>
-          <a href="/admin"
-            ><i class="fas fa-chart-line mr-2 mb-2 mt-2"></i>Xem báo cáo quản lý</a
-          >
-        </li>
-        <li>
-          <a href="/admin/staffs"
-            ><i class="fas fa-users mr-2 mb-2 mt-2"></i>Quản lý nhân viên</a
-          >
-        </li>
-        <li>
-          <a href="/admin/takeCare"
-            ><i class="fas fa-clock mr-2 mb-2 mt-2"></i>Quản lý lịch làm</a
-          >
-        </li>
-        <li>
-          <a href="/admin/tables"
-            ><i class="fas fa-table mr-2 mb-2 mt-2"></i>Quản lý bàn</a
-          >
-        </li>
-        <li>
-          <a href="/admin/editMenu"
-            ><i class="fas fa-utensils mr-2 mb-2 mt-2"></i>Quản lý món ăn</a
-          >
-        </li>
-        <li>
-          <a href="/admin/editIngredient"
-            ><i class="fas fa-clipboard mr-2 mb-2 mt-2"></i>Quản lý kho</a
-          >
-        </li>
-        <li>
-          <a href="/admin/adminNews"
-            ><i class="fas fa-newspaper mr-2 mb-2 mt-2"></i>Quản lý tin tức</a
-          >
-        </li>
-        <!-- <li>
-          <a href="/restaurantInfor/managers"
-            ><i class="fas fa-cog mr-2 mb-2 mt-2"></i>Thông tin nhà hàng</a>
-        </li> -->
-         <!-- <li>
-          <a href="/bookingTable/management"
-            ><i class="fas fa-table mr-2 mb-2 mt-2"></i>Quản lý đặt bàn</a
-          >
-        </li> -->
+        <% if (user.role === 'ADMIN') { %>
+          <li>
+            <a href="/owner/revenue">
+              <i class="fas fa-file-invoice-dollar mr-2 mb-2 mt-2"></i>Báo cáo doanh thu
+            </a>
+          </li>
+          <li>
+            <a href="/owner/adminNews"
+              ><i class="fas fa-newspaper mr-2 mb-2 mt-2"></i>Quản lý tin tức</a
+            >
+          </li>
+          <li>
+            <a href="/owner/users">
+              <i class="fas fa-user-cog mr-2 mb-2 mt-2"></i>Quản lý người dùng
+            </a>
+          </li>
         <% } %>
-        <% if (user.role !== 'RESOWNER') { %>
-        
-        <li>
-          <a href="/users/<%=user._id %>">
-            <i class="fas fa-user mr-2 mb-2 mt-2"></i>Hồ sơ cá nhân
-          </a>
-        </li>
-
-        <li>
-          <a href="/admin/takeCare/staff/<%= user._id %>"
-            ><i class="fas fa-clock mr-2 mb-2 mt-2"></i>Xem lịch làm</a
-          >
-        </li>
-
-        
+        <% if (user.role == 'RESOWNER' ) { %>
+          <li>
+            <a href="/admin"
+              ><i class="fas fa-chart-line mr-2 mb-2 mt-2"></i>Xem báo cáo quản lý</a
+            >
+          </li>
+          <li>
+            <a href="/admin/staffs"
+              ><i class="fas fa-users mr-2 mb-2 mt-2"></i>Quản lý nhân viên</a
+            >
+          </li>
+          <li>
+            <a href="/admin/takeCare"
+              ><i class="fas fa-clock mr-2 mb-2 mt-2"></i>Quản lý lịch làm</a
+            >
+          </li>
+          <li>
+            <a href="/admin/tables"
+              ><i class="fas fa-table mr-2 mb-2 mt-2"></i>Quản lý bàn</a
+            >
+          </li>
+          <li>
+            <a href="/admin/editMenu"
+              ><i class="fas fa-utensils mr-2 mb-2 mt-2"></i>Quản lý món ăn</a
+            >
+          </li>
+          <li>
+            <a href="/admin/editIngredient"
+              ><i class="fas fa-clipboard mr-2 mb-2 mt-2"></i>Quản lý kho</a
+            >
+          </li>
+          <!-- <li>
+            <a href="/restaurantInfor/managers"
+              ><i class="fas fa-cog mr-2 mb-2 mt-2"></i>Thông tin nhà hàng</a>
+          </li> -->
+          <!-- <li>
+            <a href="/bookingTable/management"
+              ><i class="fas fa-table mr-2 mb-2 mt-2"></i>Quản lý đặt bàn</a
+            >
+          </li> -->
         <% } %>
-        <li>
-          <a href="/order">
-            <i class="fas fa-clipboard mr-2 mb-2 mt-2"></i>Gọi món
-          </a>
-        </li>
-        <li>
-          <a href="/order/chef">
-            <i class="fas fa-clipboard mr-2 mb-2 mt-2"></i>Các món đang đợi
-          </a>
-        </li>
+        <% if (user.role !== 'RESOWNER' && user.role !== 'ADMIN') { %>
+          <li>
+            <a href="/users/<%=user._id %>">
+              <i class="fas fa-user mr-2 mb-2 mt-2"></i>Hồ sơ cá nhân
+            </a>
+          </li>
+
+          <li>
+            <a href="/admin/takeCare/staff/<%= user._id %>"
+              ><i class="fas fa-clock mr-2 mb-2 mt-2"></i>Xem lịch làm</a
+            >
+          </li>
+        <% } %>
+
+        <% if (user.role !== 'ADMIN') { %>
+          <li>
+            <a href="/order">
+              <i class="fas fa-clipboard mr-2 mb-2 mt-2"></i>Gọi món
+            </a>
+          </li>
+
+          <li>
+            <a href="/order/chef">
+              <i class="fas fa-clipboard mr-2 mb-2 mt-2"></i>Các món đang đợi
+            </a>
+          </li>
+        <% } %>
         <li>
           <a href="#" onclick="document.getElementById('logoutForm').submit(); return false;">
             <i class="fas fa-sign-out-alt mr-2 mb-2 mt-2"></i>Đăng xuất

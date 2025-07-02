@@ -12,7 +12,7 @@
 
 <header class="news-header">
   <h1>Danh sách tin tức</h1>
-  <button class="btn-add" onclick="window.location.href='/admin/adminNews/add'">
+  <button class="btn-add" onclick="window.location.href='/owner/adminNews/add'">
     <i class="fas fa-plus"></i>
   </button>
 </header>
@@ -32,7 +32,7 @@
           <div class="news-item-right">
             <div class="news-top-row">
               <h3 class="news-title">
-                <a href="/admin/adminNews/detail/<%= article._id %>">
+                <a href="/owner/adminNews/detail/<%= article._id %>">
                   <%= article.title %>
                 </a>
               </h3>
@@ -61,7 +61,7 @@
 
 <script>
   function editNews(id) {
-    window.location.href = '/admin/adminNews/edit/' + id;
+    window.location.href = '/owner/adminNews/edit/' + id;
   }
 
   function deleteNews(id) {
@@ -76,7 +76,7 @@
       cancelButtonText: 'Hủy',
     }).then((result) => {
       if (result.isConfirmed) {
-        fetch('/admin/adminNews/' + id, { method: 'DELETE' })
+        fetch('/owner/adminNews/' + id, { method: 'DELETE' })
           .then(res => res.json())
           .then(data => {
             Swal.fire('Đã xóa!', 'Bài viết đã được xóa.', 'success')

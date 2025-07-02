@@ -6,6 +6,7 @@ const path = require("path");
 const passport = require("./config/oauth20");
 const sessionMiddleware = require("./config/session");
 const expressLayouts = require("express-ejs-layouts");
+const ownerRoutes = require("./routes/ownerRouter");
 
 const WebSocket = require("ws");
 const http = require("http");
@@ -47,6 +48,8 @@ router(app);
 
 const paymentController = require('./app/controllers/PaymentController');
 app.get('/payment-success', paymentController.paymentSuccessPage);
+
+app.use("/owner", ownerRoutes);
 
 // WebSocket server logic
 wss.on("connection", (ws) => {

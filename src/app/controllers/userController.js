@@ -302,17 +302,17 @@ exports.postSignIn = async (req, res, next) => {
     delete req.session.user.password;
 
     req.session.save(() => {
-    if (user.role === "ADMIN") {
-      return res.redirect("/owner");   
-    }
-    if (user.role === "RESOWNER" || user.role === "RESMANAGER") {
-      return res.redirect("/admin");   
-    }
-    if (user.role === "KITCHENSTAFF" || user.role === "WAITER") {
-      return res.redirect("/order")
-    }
-    return res.redirect("/menu");      
-  });
+      if (user.role === "ADMIN") {
+        return res.redirect("/owner");   
+      }
+      if (user.role === "RESOWNER") {
+        return res.redirect("/admin");   
+      }
+      if (user.role === "KITCHENSTAFF" || user.role === "WAITER") {
+        return res.redirect("/order")
+      }
+      return res.redirect("/menu");      
+    });
   } catch (err) {
     console.error(err);
     res.render("login", {

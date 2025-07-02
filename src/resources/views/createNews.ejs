@@ -9,7 +9,7 @@
 </head>
   <body>
     <header class="news-header">
-      <button class="btn-return fas fa-chevron-left fa-lg" onclick="window.location.href='/admin/adminNews'"></button>
+      <button class="btn-return fas fa-chevron-left fa-lg" onclick="window.location.href='/owner/adminNews'"></button>
       <h1>Tạo tin tức mới</h1>
     </header>
     <div class="form-wrapper">
@@ -50,7 +50,7 @@
         const formData = new FormData(form);
     
         try {
-          const response = await fetch("/admin/adminNews", {
+          const response = await fetch("/owner/adminNews", {
             method: "POST",
             body: formData
           });
@@ -64,7 +64,7 @@
               icon: "success",
               confirmButtonText: "OK",
             }).then(() => {
-              window.location.href = "/admin/adminNews";
+              window.location.href = "/owner/adminNews";
             });
           } else {
             Swal.fire({

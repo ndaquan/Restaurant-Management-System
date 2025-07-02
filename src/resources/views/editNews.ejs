@@ -10,7 +10,7 @@
 <body>
   <div>
     <header class="news-header">
-      <button class="btn-return fas fa-chevron-left fa-lg" onclick="window.location.href='/admin/adminNews'"></button>
+      <button class="btn-return fas fa-chevron-left fa-lg" onclick="window.location.href='/owner/adminNews'"></button>
       <h1>Chỉnh sửa tin tức</h1>
     </header>
     <div class="form-wrapper">
@@ -42,7 +42,7 @@
       const formData = new FormData(form);
       const newsId = document.getElementById("newsId").value;
       try {
-        const response = await fetch(`/admin/adminNews/${newsId}`, {
+        const response = await fetch(`/owner/adminNews/${newsId}`, {
           method: "PUT",
           body: formData
         });
@@ -63,7 +63,7 @@
               popup: "animate__animated animate__fadeOutDown"
             }
           }).then(() => {
-            window.location.href = "/admin/adminNews";
+            window.location.href = "/owner/adminNews";
           });
         } else {
           Swal.fire({
