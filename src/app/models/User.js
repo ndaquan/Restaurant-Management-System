@@ -33,10 +33,9 @@ const UserSchema = new Schema(
             enum: ["TRIAL", "MONTHLY", "YEARLY", "EXPIRED"],
             default: "TRIAL",
           },
-          trialEnd: {
-            type: Date,
-            required: false,
-          },
+          trialEnd: Date,      // nếu là trial
+          startedAt: Date,     // nếu là paid
+          expiredAt: Date
         },
         { _id: false } // Không cần _id cho subdocument
       ),

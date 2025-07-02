@@ -56,13 +56,13 @@ exports.getTableDetail = async (req, res) => {
 
 exports.updateTable = async (req, res) => {
     const { tableId } = req.params;
-    const { seatNumber, description, depositPrice, status, type } = req.body;
+    const { seatNumber, description, status, type } = req.body;
 
-    if (!seatNumber || !depositPrice || !status || !type) {
+    if (!seatNumber || !status || !type) {
         return res.render('editTable', {
             layout: 'layouts/mainAdmin',
             title: 'Chỉnh sửa bàn',
-            table: { _id: tableId, seatNumber, description, depositPrice, status, type },
+            table: { _id: tableId, seatNumber, description, status, type },
             errorMessage: 'Vui lòng điền đầy đủ thông tin bắt buộc',
             successMessage: null
         });
@@ -104,7 +104,6 @@ exports.updateTable = async (req, res) => {
         table.seatNumber = parseInt(seatNumber, 10); 
         table.description = description || ''; 
         table.imageUrl = newImageUrl;
-        table.depositPrice = parseFloat(depositPrice); 
         table.status = status.toUpperCase(); 
         table.type = type.toUpperCase(); 
         table.updatedAt = Date.now();
@@ -120,7 +119,7 @@ exports.updateTable = async (req, res) => {
 
 exports.createTables = async (req, res) => {
     try {
-        const { idTable, seatNumber, description, depositPrice, status, type } = req.body;
+        const { idTable, seatNumber, description, status, type } = req.body;
         let imageUrl = null;
 
         if (req.file) {
@@ -146,7 +145,7 @@ exports.createTables = async (req, res) => {
                 layout: "layouts/mainAdmin",
                 title: "Thêm Bàn Mới",
                 errorMessage: "Trạng thái bàn không hợp lệ!",
-                idTable, seatNumber, description, depositPrice, status, type
+                idTable, seatNumber, description, status, type
             });
         }
 
@@ -155,7 +154,7 @@ exports.createTables = async (req, res) => {
                 layout: "layouts/mainAdmin",
                 title: "Thêm Bàn Mới",
                 errorMessage: "Loại bàn không hợp lệ!",
-                idTable, seatNumber, description, depositPrice, status, type
+                idTable, seatNumber, description, status, type
             });
         }
 
@@ -164,7 +163,6 @@ exports.createTables = async (req, res) => {
             seatNumber,
             description,
             imageUrl,
-            depositPrice,
             status: formattedStatus,
             type: formattedType,
             restaurant: req.user.restaurant
@@ -175,7 +173,7 @@ exports.createTables = async (req, res) => {
             layout: "layouts/mainAdmin",
             title: "Thêm Bàn Mới",
             successMessage: "Thêm bàn thành công!",
-            idTable: "", seatNumber: "", description: "", depositPrice: "", status: "AVAILABLE", type: "NORMAL"
+            idTable: "", seatNumber: "", description: "", status: "AVAILABLE", type: "NORMAL"
         });
     } catch (error) {
         console.error("Lỗi khi tạo bàn:", error);
@@ -186,7 +184,6 @@ exports.createTables = async (req, res) => {
             idTable: req.body?.idTable || "",
             seatNumber: req.body?.seatNumber || "",
             description: req.body?.description || "",
-            depositPrice: req.body?.depositPrice || "",
             status: req.body?.status || "AVAILABLE",
             type: req.body?.type || "NORMAL"
         });
@@ -231,7 +228,6 @@ exports.addTables = (req, res) => {
         idTable: "",
         seatNumber: "",
         description: "",
-        depositPrice: "",
         status: "AVAILABLE",
         type: "NORMAL",
         errorMessage: null,

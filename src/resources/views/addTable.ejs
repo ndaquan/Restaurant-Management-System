@@ -34,11 +34,6 @@
                 <label for="description" class="form-label">Mô tả</label>
                 <textarea class="form-control-table" id="description" name="description" rows="3"><%= typeof description !== 'undefined' ? description : '' %></textarea>
             </div>
-            <div class="mb-3">
-                <label for="depositPrice" class="form-label">Giá đặt cọc</label>
-                <input type="number" class="form-control-table" id="depositPrice" name="depositPrice" 
-                       value="<%= typeof depositPrice !== 'undefined' ? depositPrice : '' %>">
-            </div>
             
             <div class="mb-3">
                 <label for="status" class="form-label">Trạng thái</label>
@@ -71,20 +66,12 @@
         // Function to validate the form
         function validateForm() {
             const idTable = document.getElementById("idTable").value;
-            const depositPrice = document.getElementById("depositPrice").value;
             const description = document.getElementById("description").value;
 
             // Kiểm tra độ dài mã bàn (tối đa 8 ký tự)
             const maxIdTableLength = 8;
             if (idTable.length > maxIdTableLength) {
                 alert("Mã bàn không được dài quá 8 ký tự. Vui lòng nhập lại.");
-                return false;
-            }
-
-            // Kiểm tra giá đặt cọc (tối đa 1,000,000)
-            const maxDepositPrice = 1000000;
-            if (depositPrice && parseInt(depositPrice) > maxDepositPrice) {
-                alert("Giá đặt cọc không được lớn hơn 1,000,000. Vui lòng nhập lại.");
                 return false;
             }
 

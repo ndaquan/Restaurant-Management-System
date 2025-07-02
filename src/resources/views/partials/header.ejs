@@ -23,46 +23,41 @@
           width="100"
         />
       </div>
-      <div class="nav-links">
-        <a href="/"> Trang chủ </a>
-        <a href="/news"> Tin tức </a>
-        <% if (user && user.role === "CUSTOMER") { %>
-          <a href="/menu"> Thực đơn </a>
-        <a href="/bookingTable"> Đặt chỗ </a>
-        <a href="/news"> Tin tức </a>
-        <% } %>
-      </div>
+      <% if (!user) { %>
+        <div class="nav-links">
+          <a href="/"> Trang chủ </a>
+          <a href="/news"> Tin tức </a>
+        </div>
+      <% } %>
 
       <div class="user-menu">
-        <% if (user) { %>
-        <div class="user-avatar">
-          <img src="<%= user.avatar %>" alt="Avatar" />
-          <div class="dropdown">
-            <span> <%= user.name %> </span>
-            <span> <%= user.name %> </span>
-            <div class="dropdown-content">
-              <% if (user.role === 'CUSTOMER') { %>
-                <a href="/users/<%= user._id %>">Hồ sơ</a>
-              <% } else if (user.role === 'RESOWNER') { %>
-                <a href="/admin%>">Quản lí</a>
-              <% } else if (user.role === 'WAITER' || user.role === 'KITCHENSTAFF'){ %>
-                <a href="/users/<%= user._id %>">Hồ sơ</a>
-                <a href="/order">Gọi món</a>
-              <% } else { %>
-                <a href="/users/<%= user._id %>">Hồ sơ</a>
-                <a href="/admin">Quản lí</a>
-              <% } %>
-              <form action="/auth/logout" method="POST">
-                <button
-                  type="submit"
-                  style="background-color: #fff; border: none"
-                >
-                  Đăng xuất
-                </button>
-              </form>
+        <% if (user && (user.role === 'RESOWNER' || user.role === 'WAITER' || user.role === 'KITCHENSTAFF')) { %>
+          <div class="user-avatar">
+            <img src="<%= user.avatar %>" alt="Avatar" />
+            <div class="dropdown">
+              <span> <%= user.name %> </span>
+              <span> <%= user.name %> </span>
+              <div class="dropdown-content">
+                <% if (user.role === 'WAITER' || user.role === 'KITCHENSTAFF') { %>
+                  <a href="/users/<%= user._id %>">Hồ sơ</a>
+                  <a href="/order">Gọi món</a>
+                <% } else if (user.role === 'RESOWNER') { %>
+                  <a href="/admin%>">Quản lí</a>
+                <% } else { %>
+                  <a href="/users/<%= user._id %>">Hồ sơ</a>
+                  <a href="/admin">Quản lí</a>
+                <% } %>
+                <form action="/auth/logout" method="POST">
+                  <button
+                    type="submit"
+                    style="background-color: #fff; border: none"
+                  >
+                    Đăng xuất
+                  </button>
+                </form>
+              </div>
             </div>
           </div>
-        </div>
         <% } else { %>
         <div class="auth-links">
           <a href="/auth/login">Đăng nhập</a>

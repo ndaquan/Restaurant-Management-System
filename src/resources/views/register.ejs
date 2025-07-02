@@ -6,22 +6,50 @@
 </head>
 
 <body>
-    <nav>
-        <a href="#"><img src="/image/resly.png" alt="logo"></a>
-    </nav>
     <div class="form-wrapper">
         <h2>Đăng ký</h2>
-        <h3 class="error">
-            <%= typeof message !=='undefined' ? message: "" %>
-        </h3>
         <form action="/auth/sign-up" method="post">
             <% if (typeof trial !== "undefined" && trial === "true") { %>
                 <input type="hidden" name="trial" value="true" />
             <% } %>
-            <!-- <div class="form-control">
-                <input type="text" name="fullName" required>
+
+            <% if (typeof guestId !== "undefined") { %>
+                <input type="hidden" name="guestId" value="<%= guestId %>" />
+            <% } %>
+            <% if (typeof plan !== "undefined") { %>
+                <input type="hidden" name="plan" value="<%= plan %>" />
+            <% } %>
+            
+             <div class="form-control">
+                <input type="text" name="restaurantOwnerName" required>
                 <label>Họ và Tên</label>
-            </div> -->
+            </div>
+            <div class="form-control">
+                <input type="text" name="restaurantName" required>
+                <label>Tên nhà hàng</label>
+            </div>
+            <div class="form-control">
+                <select name="bankCode" required>
+                    <option value="">Chọn ngân hàng</option>
+                    <option value="970436">Vietcombank (VCB)</option>
+                    <option value="970407">Techcombank (TCB)</option>
+                    <option value="970418">BIDV</option>
+                    <option value="970422" data-name="MBBank">MBBank</option>
+                    <option value="970415">VietinBank</option>
+                    <option value="970405">Agribank</option>
+                    <option value="970423">TPBank</option>
+                    <option value="970443">VPBank</option>
+                    <option value="970432">Sacombank</option>
+                </select>
+            </div>
+            <div class="form-control">
+                <input type="text" name="accountName" required>
+                <label>Tên tài khoản ngân hàng</label>
+            </div>
+            <div class="form-control">
+                <input type="text" name="accountNo" required>
+                <label>Số tài khoản ngân hàng</label>
+            </div>
             <div class="form-control">
                 <input type="email" name="email" required>
                 <label>Email </label>
@@ -46,7 +74,7 @@
             <% } %>
         </form>
         <div class="back-home">
-           <a href="/"><- Quay lại trang chủ</a></p>
+           <a href="/">← Quay lại trang chủ</a></p>
         </div>
     </div>
 

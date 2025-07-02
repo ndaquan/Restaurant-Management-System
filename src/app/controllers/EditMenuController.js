@@ -1,12 +1,11 @@
 const Menu = require('../models/Menu');
-const CategoryFood = require('../models/CategoryFood');
 
 const stream = require("stream");
 const cloudinary = require('../../config/cloudinary/index')
 
 exports.getList = async (req, res) => {
   try {
-    const menus = await Menu.find({ restaurant: req.user.restaurant }).populate('category');
+    const menus = await Menu.find({ restaurant: req.user.restaurant })
     res.render('editMenu', { menus, layout: 'layouts/mainAdmin' });
   } catch (error) {
     res.status(500).send(error.message);
@@ -15,7 +14,7 @@ exports.getList = async (req, res) => {
 
 exports.renderDetailDish = async (req, res) => {
   try {
-    const dish = await Menu.findOne({ _id: req.params.id, restaurant: req.user.restaurant }).populate('category');
+    const dish = await Menu.findOne({ _id: req.params.id, restaurant: req.user.restaurant })
     if (!dish) {
       return res.status(404).send("Món ăn không tồn tại");
     }
@@ -44,8 +43,7 @@ exports.deleteDish = async (req, res) => {
 
 exports.renderCreateForm = async (req, res) => {
   try {
-    const categories = await CategoryFood.find();
-    res.render('createDish', { categories, layout: 'layouts/mainAdmin' });
+    res.render('createDish', { layout: 'layouts/mainAdmin' });
   } catch (err) {
     res.status(500).send(err.message);
   }
@@ -59,7 +57,7 @@ exports.createDish = async (req, res) => {
       }
 
        // Tạo stream upload ảnh lên Cloudinary
-    const uploadStream = cloudinary.uploader.upload_stream(
+      const uploadStream = cloudinary.uploader.upload_stream(
       {
         folder: "dishes", // Lưu ảnh vào folder 'dishes'
         public_id: `dish_${Date.now()}`,
@@ -84,8 +82,6 @@ exports.createDish = async (req, res) => {
           price: req.body.price,
           imageUrl: dishImageUrl,
           statusFood: "AVAILABLE",
-          // Nếu cần, set category mặc định hoặc lấy từ form:
-          category: req.body.category,
           restaurant: restaurantId, 
         });
 
@@ -114,9 +110,8 @@ exports.createDish = async (req, res) => {
 exports.renderEditForm = async (req, res) => {
   try {
     const dish = await Menu.findOne({ _id: req.params.id, restaurant: req.user.restaurant });
-    const categories = await CategoryFood.find();
     if (!dish) return res.status(404).send('Dish not found');
-    res.render('editDish', { dish, categories, layout: 'layouts/mainAdmin' });
+    res.render('editDish', { dish, layout: 'layouts/mainAdmin' });
   } catch (error) {
     res.status(500).send(error.message);
   }
@@ -131,8 +126,6 @@ exports.updateDish = async (req, res) => {
       foodName: req.body.foodName,
       description: req.body.description,
       price: req.body.price,
-      category: req.body.category,
-      // Nếu admin không chọn file mới, có thể giữ lại imageUrl cũ từ form (nếu có)
       imageUrl: req.body.imageUrl 
     };
 

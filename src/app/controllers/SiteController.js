@@ -13,10 +13,18 @@ class SiteController {
     }
 
     const isTrial = req.query.trial === "true";
+    const guestId = req.query.guestId;
+    const plan = req.query.plan;
+
+    if (guestId) req.session.guestId = guestId;
+    if (plan) req.session.plan = plan;
+
     res.render("register", {
       layout: "layouts/auth",
       title: "Register",
-      trial: isTrial ? "true" : "false", 
+      trial: isTrial ? "true" : "false",
+      guestId,
+      plan,
     });
   }
 

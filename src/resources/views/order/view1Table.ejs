@@ -43,7 +43,7 @@
                             <%= menu.foodName %>
                         </h3>
                         <p class="text-muted">
-                            <%= Number(menu.price) %> VND
+                            <%= Number(menu.price).toLocaleString("vi-VN") %> VND
                         </p>
                         <p class="text-<%=menu.statusFood === 'AVAILABLE' ? 'success': 'danger'%>">
                             <%=menu.statusFood==='AVAILABLE' ? 'Còn món' : 'Đã hết' %>
@@ -110,7 +110,8 @@
             btn.text('Thêm')
         } else {
             btn.prop('disabled', false);
-            btn.text('Thêm ' + toAddDished.length + ' món ăn (' + toAddDishesPrice + ' VND)')
+            const formatted = Number(toAddDishesPrice).toLocaleString("vi-VN");
+            btn.text('Thêm ' + toAddDished.length + ' món ăn (' + formatted + ' VND)');
         }
     }
     function add() {
@@ -148,7 +149,8 @@
                 }
                 $("#orderDataTable tbody").html(html);
                 $(".thanh-toan").attr('action', '/payment/' + res.data._id + '/order');
-                $("#left-panel-total-price").text('Tổng giá: ' + totalPrice + ' VND')
+                const formattedTotal = totalPrice.toLocaleString("vi-VN");
+                $("#left-panel-total-price").text('Tổng giá: ' + formattedTotal + ' VND');
             }).catch((err) => {
                 toastr.error(err.response.data.message)
             })

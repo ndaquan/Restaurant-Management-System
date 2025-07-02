@@ -9,7 +9,6 @@ const MenuSchema = new Schema({
   imageUrl: { type: String, required: true },
   starRating: { type: Number },
   statusFood: { type: String, enum: ["AVAILABLE", "UNAVAILABLE"], required: true },
-  category: {type: mongoose.Schema.Types.ObjectId, ref: 'CategoryFood', required: true},
   restaurant: { type: mongoose.Schema.Types.ObjectId, ref: 'RestaurantInfor', required: true },
 });
 

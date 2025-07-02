@@ -1,3 +1,5 @@
+const TEST_MODE = true;
+
 require("dotenv").config();
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
@@ -5,6 +7,8 @@ const User = require("../models/User");
 const Staff = require("../models/StaffInfor");
 const { sendMail } = require("../../config/email");
 const { genarateResetToken } = require("../../util");
+const RestaurantInfor = require("../models/RestaurantInfor");
+const SubscriptionLog = require("../models/SubscriptionLog");
 
 const cloudinary = require("../../config/cloudinary/index.js");
 const multer = require("multer");
@@ -15,64 +19,205 @@ const passport = require("passport");
 const storage = multer.memoryStorage();
 
 exports.upload = multer({ storage: storage });
+
 exports.postSignUp = async (req, res, next) => {
-  try {
-    const { email, password, phone, confirmPassword } = req.body;
+    try {
+      const {
+        email,
+        password,
+        phone,
+        confirmPassword,
+        restaurantOwnerName,
+        restaurantName,
+        accountName,
+        accountNo,
+        bankCode,
+        guestId: guestIdFromBody,
+        plan: planFromBody,
+      } = req.body;
 
-    if (password !== confirmPassword) {
-      return res.render("register", {
-        title: "register",
-        error: "Mật khẩu không khớp!",
-      });
+
+      if (password !== confirmPassword) {
+        return res.render("register", {
+          layout: "layouts/auth",
+          title: "register",
+          error: "Mật khẩu không khớp!",
+        });
+      }
+
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.render("register", {
+          layout: "layouts/auth",
+          title: "register",
+          error: "Email đã được đăng kí",
+        });
+      }
+
+      // Kiểm tra họ và tên
+      if (!restaurantOwnerName || restaurantOwnerName.trim().length < 3) {
+        return res.render("register", {
+          layout: "layouts/auth",
+          title: "register",
+          error: "Họ và tên phải có ít nhất 3 ký tự.",
+        });
+      }
+
+      // Kiểm tra tên nhà hàng
+      if (!restaurantName || restaurantName.trim().length < 2) {
+        return res.render("register", {
+          layout: "layouts/auth",
+          title: "register",
+          error: "Tên nhà hàng không hợp lệ.",
+        });
+      }
+
+      // Kiểm tra định dạng email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.render("register", {
+          layout: "layouts/auth",
+          title: "register",
+          error: "Email không hợp lệ.",
+        });
+      }
+
+      // Kiểm tra định dạng số tài khoản
+      if (!/^\d{8,20}$/.test(accountNo)) {
+        return res.render("register", {
+          layout: "layouts/auth",
+          title: "register",
+          error: "Số tài khoản không hợp lệ. Phải là chuỗi số từ 8 đến 20 chữ số.",
+        });
+      }
+
+      // Kiểm tra tên tài khoản
+      if (!accountName || accountName.trim().length < 3) {
+        return res.render("register", {
+          layout: "layouts/auth",
+          title: "register",
+          error: "Tên tài khoản không hợp lệ. Vui lòng nhập đầy đủ.",
+        });
+      }
+
+      // Kiểm tra mã ngân hàng
+      if (!/^\d{6}$/.test(bankCode)) {
+        return res.render("register", {
+          layout: "layouts/auth",
+          title: "register",
+          error: "Ngân hàng không hợp lệ. Vui lòng chọn từ danh sách.",
+        });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 12);
+      const resetToken = crypto.randomBytes(32).toString("hex");
+      const hashedToken = await bcrypt.hash(resetToken, 12);
+
+      let subscription = null;
+      const guestId = req.session.guestId || req.body.guestId;
+      const plan = req.session.plan || req.body.plan;
+
+      console.log("🧩 guestId:", guestId);
+      console.log("🧩 plan:", plan);
+      console.log("🧩 trial flag:", req.body.trial);
+
+      if (req.body.trial === "true") {
+        subscription = {
+          type: "TRIAL",
+          trialEnd: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        };
+        console.log("✅ Tạo subscription trial:", subscription);
+
+      } else if (guestId && plan) {
+        const log = await SubscriptionLog.findOne({
+          guestId,
+          plan,
+          paid: true,
+        });
+
+        console.log("🔍 SubscriptionLog tìm được:", log);
+
+
+        if (log) {
+        const now = new Date();
+        const durationMs =
+          plan === "monthly"
+            ? 30 * 24 * 60 * 60 * 1000
+            : 365 * 24 * 60 * 60 * 1000;
+
+        subscription = {
+          type: plan.toUpperCase(),
+          startedAt: now,
+          expiredAt: new Date(now.getTime() + durationMs),
+        };
+
+        await SubscriptionLog.updateOne({ _id: log._id }, { user: undefined });
+        console.log("✅ Gán subscription từ gói thanh toán:", subscription);
+      } else {
+        console.log("❌ Không tìm thấy subscription hợp lệ trong DB");
+      }
+      } else {
+      console.log("❌ Thiếu guestId hoặc plan");
     }
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.render("register", {
-        title: "register",
-        error: "Email đã được đăng kí",
+      if (!subscription || (!subscription.trialEnd && !subscription.startedAt)) {
+        console.log("🚫 Không có subscription hợp lệ, trả về lỗi");
+
+        return res.render("register", {
+          title: "register",
+          error: "Bạn chưa chọn gói hợp lệ để đăng ký tài khoản.",
+        });
+      }
+
+      const user = new User({
+        email,
+        password: hashedPassword,
+        phoneNumber: phone,
+        firstname: restaurantOwnerName,
+        role: "RESOWNER",
+        status: "INACTIVE",
+        resetToken: hashedToken,
+        resetTokenExpiration: Date.now() + 3600000,
+        subscription
       });
+
+      const restaurant = await RestaurantInfor.create({
+        restaurantName,
+        email,
+        hotline: phone,
+        owner: user._id,
+        bankInfo: {
+          accountName,
+          accountNo,
+          bankCode,
+        },
+      });
+
+      user.restaurant = restaurant._id;
+
+      await sendMail(email, resetToken, true);
+      await user.save();
+
+      if (guestId) {
+        await SubscriptionLog.updateOne(
+          { guestId, plan },
+          { user: user._id }
+        );
+        delete req.session.guestId;
+        delete req.session.plan;
+      }
+
+      res.render("login", {
+        layout: "layouts/auth",
+        title: "Forgot password",
+        title: "Login",
+        message: "Hãy kiểm tra email của bạn để xác thực tài khoản",
+      });
+    } catch (err) {
+      console.error(err);
+      next(err);
     }
-
-    const hashedPassword = await bcrypt.hash(password, 12);
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    const hashedToken = await bcrypt.hash(resetToken, 12);
-
-    const trial =
-      req.body.trial === "true"
-        ? {
-            subscription: {
-              type: "TRIAL",
-              trialEnd: new Date(Date.now() + 5 * 60 * 1000),
-            },
-          }
-        : {};
-
-    const user = new User({
-      email,
-      password: hashedPassword,
-      phoneNumber: phone,
-      role: "RESOWNER",
-      status: "INACTIVE",
-      resetToken: hashedToken,
-      resetTokenExpiration: Date.now() + 3600000,
-      ...trial,
-    });
-
-    await sendMail(email, resetToken, true);
-    await user.save();
-
-    res.render("login", {
-      layout: "layouts/auth",
-      title: "Forgot password",
-      title: "Login",
-      message: "Hãy kiểm tra email của bạn để xác thực tài khoản",
-    });
-  } catch (err) {
-    console.error(err);
-    next(err);
-  }
-};
+  };
 
 // [POST] => /sign-in
 exports.postSignIn = async (req, res, next) => {
@@ -118,12 +263,12 @@ exports.postSignIn = async (req, res, next) => {
       });
     }
 
+    const now = new Date();
+
     if (user.subscription?.type === "TRIAL") {
-      const now = new Date();
       if (now > new Date(user.subscription.trialEnd)) {
         user.subscription.type = "EXPIRED";
         await user.save();
-
         req.session.destroy(() => {
           return res.render("login", {
             layout: "layouts/auth",
@@ -131,9 +276,26 @@ exports.postSignIn = async (req, res, next) => {
             error: "Dùng thử đã hết hạn. Vui lòng chọn gói dịch vụ để tiếp tục.",
           });
         });
-
         return; 
       }
+    }
+
+    if (
+      (user.subscription?.type === "MONTHLY" ||
+        user.subscription?.type === "YEARLY") &&
+      user.subscription.expiredAt &&
+      now > new Date(user.subscription.expiredAt)
+    ) {
+      user.subscription.type = "EXPIRED";
+      await user.save();
+      req.session.destroy(() => {
+        return res.render("login", {
+          layout: "layouts/auth",
+          title: "Login",
+          error: "Gói dịch vụ của bạn đã hết hạn. Vui lòng gia hạn để tiếp tục.",
+        });
+      });
+      return;
     }
 
     req.session.user = { ...user.toObject() };
@@ -155,7 +317,7 @@ exports.postSignIn = async (req, res, next) => {
     console.error(err);
     res.render("login", {
       layout: "layouts/auth",
-      title: "Forgot password",
+      title: "Forgot password", 
       title: "Login",
       error: "Có sự cố, vui lòng đăng nhập sau",
     });

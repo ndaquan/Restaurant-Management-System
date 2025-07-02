@@ -38,7 +38,6 @@
                     <th>Số Ghế</th>
                     <th>Mô Tả</th>
                     <th>Ảnh</th>
-                    <th>Giá Đặt Cọc</th>
                     <th>Trạng Thái</th>
                     <th>Loại</th>
                     <th>Hành động</th>
@@ -59,7 +58,6 @@
                                     <span class="text-muted">Không có ảnh</span>
                                 <% } %>
                             </td>
-                            <td><%= table.depositPrice.toLocaleString() %> VNĐ</td>
                             <td>
                                 <% if (table.status === "AVAILABLE") { %>
                                     <span class="badge bg-success">Có sẵn</span>

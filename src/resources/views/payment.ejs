@@ -79,7 +79,11 @@
       const weekdayMap = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
       const dayOfWeek = weekdayMap[expiresAtDate.getDay()];
       const amountValue = typeof amount === "number" ? amount : parseInt(amount);
-      const description = (type === 'booking' || type === 'order') ? bookingTable._id : '';
+
+      const isSubscription = type === "monthly" || type === "yearly";
+      const isOrder = type === "order";
+
+      const description = isSubscription ? `${user._id}-${type}` : (bookingTable._id || '');
     %>
 </head>
 
@@ -88,113 +92,108 @@
     <h2>Chi tiết thanh toán</h2>
     <p class="info">Vui lòng quét mã QR bên dưới để thanh toán.</p>
 
-    <img src="https://img.vietqr.io/image/970415-108884575134-compact.png?amount=<%= amount %>&addInfo=<%= bookingTable._id %>" alt="QR VietinBank" />
+    <img src="<%= qrUrl %>" alt="QR Thanh toán" />
 
     <div class="info">
-      <% if (type==='booking' ) { %>
-        <p><strong>Booking ID:</strong>
-          <%= bookingTable._id %>
-        </p>
-        <p><strong>Số lượng ghế:</strong>
-          <%= bookingTable.quantity %>
-        </p>
-        <% } else if (type==='order' ) { %>
-          <p><strong>Order ID:</strong>
-            <%= bookingTable._id %>
-          </p>
-
-          <table>
-            <thead>
+      <% if (type === 'order') { %>
+        <p><strong>Order ID:</strong> <%= bookingTable._id %></p>
+        <table>
+          <thead>
+            <tr>
+              <th>Món ăn</th>
+              <th>Số lượng</th>
+              <th>Giá (VND)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% bookingTable.dishes.forEach(dish => { %>
               <tr>
-                <th>Món ăn</th>
-                <th>Số lượng</th>
-                <th>Giá (VND)</th>
+                <td><%= dish.menuItem.foodName %></td>
+                <td><%= dish.quantity %></td>
+                <td><%= dish.formattedPrice || dish.menuItem.price.toLocaleString("vi-VN") %></td>
               </tr>
-            </thead>
-            <tbody>
-              <% bookingTable.dishes.forEach(dish=> { %>
-                <tr>
-                  <td>
-                    <%= dish.menuItem.foodName %>
-                  </td>
-                  <td>
-                    <%= dish.quantity %>
-                  </td>
-                  <td>
-                    <%= dish.menuItem.price %>
-                  </td>
-                </tr>
-                <% }) %>
-            </tbody>
-          </table>
-          <% } %>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } else if (type === 'monthly' || type === 'yearly') { %>
+        <p><strong>Gói đăng ký:</strong> <%= type === 'monthly' ? "Gói tháng" : "Gói năm" %></p>
+      <% } %>
 
-            <p><strong>Số tiền:</strong>
-              <%= amount %> VND
-            </p>
-            <p><strong>Ngân hàng:</strong>
-              <%= bankId %>
-            </p>
-            <p><strong>Số tài khoản:</strong>
-              <%= accountNo %>
-            </p>
-            <p><strong>Tên tài khoản:</strong>
-              <%= accountName %>
-            </p>
-            <p class="expires">
-              Hết hạn lúc:  <%= dayOfWeek %>, <%= dateStr %> <%= vnHour %>:<%= vnMin %>
-            </p>
-            <p>Thời gian còn lại: <span id="countdown"></span></p>
-            <p id="payment-status"></p>
+      <p><strong>Số tiền:</strong> <%= amount %> VND</p>
+      <p><strong>Ngân hàng:</strong> <%= bankId %></p>
+      <p><strong>Tên tài khoản:</strong> <%= accountName %></p>
+      <p><strong>Số tài khoản:</strong> <%= accountNo %></p>
+
+      <% if (type === 'order') { %>
+        <style>
+          .back-button {
+            background: none;
+            border: none;
+            color: #ff0000;
+            font-weight: bold;
+            font-size:  20px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+          }
+
+          .back-button:hover {
+            color: #a20000;
+            transform: translateX(-3px);
+            text-decoration: underline;
+          }
+        </style>
+
+        <div style="margin-top: 20px;">
+          <a href="/order/<%= bookingTable.table.idTable %>">
+            <button class="back-button">← Quay lại trang đặt món</button>
+          </a>
+        </div>
+      <% } %>
+
+      <% if (type === 'monthly' || type === 'yearly') { %>
+        <p class="expires">
+          Hết hạn lúc: <%= dayOfWeek %>, <%= dateStr %> <%= vnHour %>:<%= vnMin %>
+        </p>
+        <p>Thời gian còn lại: <span id="countdown"></span></p>
+      <% } %>
+
+      <p id="payment-status"></p>
     </div>
   </div>
 
   <script>
     window.addEventListener("load", function () {
-      const expiryTime = new Date("<%= expiryTimeISO %>").getTime();
-      const description = "<%= description %>";
-      const amount = "<%= amountValue %>";
+    const isSubscription = "<%= isSubscription %>" === "true";
+    const serverExpiryTime = new Date("<%= expiryTimeISO %>").getTime();
+    const description = "<%= description %>";
+    const amount = "<%= amountValue %>";
+
+    if (isSubscription) {
+      const localKey = `subscription_expiry_${description}`;
+      let expiryTime = Number(localStorage.getItem(localKey));
+
+      if (!expiryTime || expiryTime < Date.now()) {
+        localStorage.setItem(localKey, serverExpiryTime);
+        expiryTime = serverExpiryTime;
+      }
+
       let isExpiredHandled = false;
 
       function startCountdown() {
-        const now = new Date().getTime();
+        const now = Date.now();
         const timeLeft = expiryTime - now;
 
         if (timeLeft <= 0 && !isExpiredHandled) {
           isExpiredHandled = true;
           document.getElementById("countdown").innerText = "Đã hết thời gian";
           clearInterval(paymentCheckInterval);
-
-          // Nếu chưa thanh toán thì xoá
-        fetch(`/bookingTable/bookingDetail/<%= bookingTable._id %>`, {
-          method: "DELETE"
-        })
-          .then(res => res.json())
-          .then(data => {
-            console.log("✅ Xoá thành công:", data);
-            Swal.fire({
-              icon: "warning",
-              title: "Hết thời gian thanh toán!",
-              text: "Đặt bàn đã bị huỷ.",
-              confirmButtonText: "Quay lại trang đặt bàn"
-            }).then(() => {
-              window.location.href = "/bookingTable";
-            });
-          })
-          .catch(err => {
-            console.error("❌ Lỗi khi xóa đặt bàn:", err);
-            alert("Có lỗi khi xoá đặt bàn. Vui lòng thử lại.");
-          });
-
           return;
         }
-
 
         if (timeLeft > 0) {
           const minutes = Math.floor(timeLeft / (1000 * 60));
           const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
           document.getElementById("countdown").innerText = `${minutes}m ${seconds}s`;
-
           setTimeout(startCountdown, 1000);
         }
       }
@@ -202,32 +201,25 @@
       startCountdown();
 
       function checkPaymentStatus() {
-        if (!description || isNaN(amount)) {
-          console.warn("Thiếu thông tin description hoặc amount.");
-          return;
-        }
+        if (!description || isNaN(amount)) return;
 
         const url = `/payment/${description}/checkPaid?amount=${amount}`;
-        console.log("Kiểm tra thanh toán tại:", url);
-
         fetch(url)
-        .then(response => response.json())
-        .then(data => {
-          console.log("Kết quả thanh toán:", data);
-          if (data.success && data.isPaid) {
-            clearInterval(paymentCheckInterval);
-            document.getElementById("payment-status").innerText = "Thanh toán thành công! Đang chuyển hướng...";
-
-            window.location.href = data.redirectUrl;
-          }
-        })
-        .catch(error => {
-          console.error("Lỗi khi kiểm tra thanh toán:", error);
-        });
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && data.isPaid) {
+              clearInterval(paymentCheckInterval);
+              localStorage.removeItem(localKey);
+              document.getElementById("payment-status").innerText = "Thanh toán thành công! Đang chuyển hướng...";
+              window.location.href = data.redirectUrl;
+            }
+          })
+          .catch(console.error);
       }
 
       const paymentCheckInterval = setInterval(checkPaymentStatus, 5000);
-    });
+    }
+  });
   </script>
 </body>
 

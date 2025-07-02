@@ -15,6 +15,8 @@ const sessionMiddleware = session({
   }),
   cookie: {
     maxAge: ageSession,
+    sameSite: "lax",         
+    secure: process.env.NODE_ENV === "production" 
   },
 });
 

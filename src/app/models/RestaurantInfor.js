@@ -18,7 +18,12 @@ const RestaurantInforSchema = new Schema({
     ref: "User",
     required: true,
     unique: true,
-  }
+  },
+  bankInfo: {
+    accountName: { type: String, required: true },
+    accountNo: { type: String, required: true },
+    bankCode: { type: String, required: true }
+  },
 });
 
 module.exports = mongoose.model('RestaurantInfor', RestaurantInforSchema);
