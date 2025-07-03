@@ -1,31 +1,41 @@
+.body {
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  padding: 0;
+  color: #333;
+  background-color: #fff;
+}
 .blog-header {
-    text-align: center;
-    margin-bottom: 2rem;
-    padding: 2rem 0;
-    /* background-color: rgb(51 51 51); */
+  text-align: center;
+  margin-bottom: 3rem;
+  padding: 3rem 1rem;
+  background: linear-gradient(to right, #f9fafb, #f3f4f6);
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
 }
 
 .blog-category {
-    font-size: 1.25rem;
-    font-weight: bold;
-    color: #333;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #d32f2f;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
 }
 
 .blog-title {
-    font-size: 3rem;
-    font-weight: bold;
-    color: #4b4b4b;
-    margin-bottom: 0.5rem;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
 }
 
 .blog-description {
-    font-size: 1.1rem;
-    color: #6b7280;
-    max-width: 800px;
-    margin: 0 auto;
-    line-height: 1.6;
+  font-size: 1.1rem;
+  color: #4b5563;
+  max-width: 800px;
+  margin: 0 auto;
+  line-height: 1.7;
 }
 
   .container {
@@ -64,15 +74,15 @@
     position: relative;
   }
   
-  /* Hiệu ứng phóng to ảnh khi hover */
-.news-item:hover .news-item-image img {
-    transform: scale(1.1);
-}
+    /* Hiệu ứng phóng to ảnh khi hover */
+  .news-item:hover .news-item-image img {
+      transform: scale(1.1);
+  }
 
-/* Hiệu ứng đổi màu tiêu đề khi hover */
-.news-item:hover .news-item-title {
-    color: #A82825; /* Màu cam đậm hoặc có thể đổi thành primary color */
-}
+  /* Hiệu ứng đổi màu tiêu đề khi hover */
+  .news-item:hover .news-item-title {
+      color: #A82825; /* Màu cam đậm hoặc có thể đổi thành primary color */
+  }
   
   .news-item-image img {
     width: 100%;
@@ -117,6 +127,7 @@
   .clamped {
     display: -webkit-box;
     -webkit-line-clamp: 3; /* Số dòng hiển thị, thay đổi theo ý bạn */
+    line-clamp: 3; /* Standard property for compatibility */
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
