@@ -18,4 +18,11 @@ router.post(
   ownerController.toggleStatus
 );
 
+router.get(
+  "/reports",
+  isAuth.requireAuth,
+  isPermissions(["ADMIN"]),
+  ownerController.getSystemReportDashboard
+);
+
 module.exports = router;

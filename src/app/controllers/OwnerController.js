@@ -1,5 +1,7 @@
 const User = require("../models/User");
 const RestaurantInfor = require("../models/RestaurantInfor");
+const Order = require("../models/OrderFood");
+const SubscriptionLog = require("../models/SubscriptionLog");
 
 const bankMap = {
   "970430": "TPBank",
@@ -58,6 +60,71 @@ exports.toggleStatus = async (req, res) => {
     res.redirect("/owner/users");
   } catch (err) {
     console.error("[ERROR] Toggling status:", err);
+    res.status(500).send("Internal Server Error");
+  }
+};
+
+exports.getSystemReportDashboard = async (req, res) => {
+  try {
+    // Tổng số nhà hàng
+    const totalRestaurants = await RestaurantInfor.countDocuments();
+
+    // Tổng số người dùng (trừ ADMIN)
+    const totalUsers = await User.countDocuments({ role: { $ne: "ADMIN" } });
+
+    // Tổng gói tháng đã thanh toán
+    const totalMonthlyPlans = await SubscriptionLog.countDocuments({
+      plan: "monthly",
+      paid: true
+    });
+
+    // Tổng gói năm đã thanh toán
+    const totalYearlyPlans = await SubscriptionLog.countDocuments({
+      plan: "yearly",
+      paid: true
+    });
+
+    // Tổng doanh thu từ SubscriptionLog
+    const revenueResult = await SubscriptionLog.aggregate([
+      { $match: { paid: true } },
+      { $group: { _id: null, total: { $sum: "$amount" } } }
+    ]);
+    const totalRevenue = revenueResult[0]?.total || 0;
+
+    // Doanh thu theo tháng (SubscriptionLog)
+    const systemRevenue = await SubscriptionLog.aggregate([
+      { $match: { paid: true } },
+      {
+        $group: {
+          _id: { $month: "$createdAt" },
+          total: { $sum: "$amount" }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+
+    // Format lại dữ liệu để gửi sang view
+    const systemRevenueFormatted = Array.from({ length: 12 }, (_, i) => {
+      const monthData = systemRevenue.find(item => item._id === i + 1);
+      return {
+        _id: i + 1,
+        total: monthData ? monthData.total : 0
+      };
+    });
+
+    // Render view
+    res.render("ownerReportDashboard", {
+      layout: "layouts/mainAdmin",
+      title: "Báo Cáo Hệ Thống",
+      totalRestaurants,
+      totalUsers,
+      totalMonthlyPlans,
+      totalYearlyPlans,
+      totalRevenue,
+      systemRevenue: JSON.stringify(systemRevenueFormatted)
+    });
+  } catch (err) {
+    console.error("[ERROR] Loading system report dashboard:", err);
     res.status(500).send("Internal Server Error");
   }
 };

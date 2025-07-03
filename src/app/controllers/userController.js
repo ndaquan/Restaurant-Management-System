@@ -164,6 +164,7 @@ exports.postSignUp = async (req, res, next) => {
         console.log("🚫 Không có subscription hợp lệ, trả về lỗi");
 
         return res.render("register", {
+          layout: "layouts/auth",
           title: "register",
           error: "Bạn chưa chọn gói hợp lệ để đăng ký tài khoản.",
         });
@@ -211,7 +212,7 @@ exports.postSignUp = async (req, res, next) => {
         layout: "layouts/auth",
         title: "Forgot password",
         title: "Login",
-        message: "Hãy kiểm tra email của bạn để xác thực tài khoản",
+        message: "Hãy kiểm tra email của bạn để xác thực tài khoản (Hãy xem cả ở thư rác nữa nhé)",
       });
     } catch (err) {
       console.error(err);
@@ -303,7 +304,7 @@ exports.postSignIn = async (req, res, next) => {
 
     req.session.save(() => {
       if (user.role === "ADMIN") {
-        return res.redirect("/owner/adminNews");   
+        return res.redirect("/owner/reports");   
       }
       if (user.role === "RESOWNER") {
         return res.redirect("/admin");   

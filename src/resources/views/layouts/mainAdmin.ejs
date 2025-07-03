@@ -41,19 +41,19 @@
       <ul class="list-unstyled components mt-3">
         <% if (user.role === 'ADMIN') { %>
           <li>
-            <a href="/owner/revenue">
+            <a href="/owner/reports">
               <i class="fas fa-file-invoice-dollar mr-2 mb-2 mt-2"></i>Báo cáo doanh thu
+            </a>
+          </li>
+          <li>
+            <a href="/owner/users">
+              <i class="fas fa-user-cog mr-2 mb-2 mt-2"></i>Quản lý người dùng
             </a>
           </li>
           <li>
             <a href="/owner/adminNews"
               ><i class="fas fa-newspaper mr-2 mb-2 mt-2"></i>Quản lý tin tức</a
             >
-          </li>
-          <li>
-            <a href="/owner/users">
-              <i class="fas fa-user-cog mr-2 mb-2 mt-2"></i>Quản lý người dùng
-            </a>
           </li>
         <% } %>
         <% if (user.role == 'RESOWNER' ) { %>
