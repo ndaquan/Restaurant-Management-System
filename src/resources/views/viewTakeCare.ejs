@@ -60,13 +60,26 @@
     </div>
 
     <script>
-        function confirmDelete(event) {
+        function confirmDelete(event, tableId) {
             event.preventDefault(); // Ngăn form submit ngay lập tức
-            if (confirm("Bạn có chắc chắn muốn xóa lịch làm này không?")) {
-                if (event.target.form) {
-                    event.target.form.submit(); // Chỉ submit nếu form tồn tại
+
+            Swal.fire({
+                title: "Bạn có chắc chắn muốn xóa?",
+                text: "Hành động này không thể hoàn tác!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#3085d6",
+                confirmButtonText: "Có, xóa ngay!"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    if (event.target.form) {
+                        event.target.form.submit(); // Chỉ submit nếu form tồn tại
+                    } else if (tableId) {
+                        document.getElementById("delete-form-" + tableId).submit();
+                    }
                 }
-            }
+            });
         }
     </script>
 </body>
