@@ -170,15 +170,3 @@ exports.updateDish = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
-// exports.searchDish = async (req, res) => {
-//   try {
-//     const { q } = req.query;
-//     const dishes = await Menu.find({
-//       foodName: { $regex: q, $options: 'i' }  // tìm kiếm không phân biệt hoa thường
-//     }).populate('category');
-//       res.status(200).json(dishes);
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// };

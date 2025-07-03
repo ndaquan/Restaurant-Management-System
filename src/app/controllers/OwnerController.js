@@ -67,7 +67,7 @@ exports.toggleStatus = async (req, res) => {
 exports.getSystemReportDashboard = async (req, res) => {
   try {
     // Tổng số nhà hàng
-    const totalRestaurants = await RestaurantInfor.countDocuments();
+    const totalRestaurants = await User.countDocuments({ role: "RESOWNER" });
 
     // Tổng số người dùng (trừ ADMIN)
     const totalUsers = await User.countDocuments({ role: { $ne: "ADMIN" } });

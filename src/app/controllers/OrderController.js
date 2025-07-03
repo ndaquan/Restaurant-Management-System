@@ -78,7 +78,7 @@ exports.viewATable = async (req, resp) => {
   if (!table) {
     return resp.status(404).send("Table not found");
   }
-  const menus = await Menu.find({ restaurant: req.user.restaurant }).populate("category");
+  const menus = await Menu.find({ restaurant: req.user.restaurant })
   resp.render("order/view1Table", { table, menus, layout: "layouts/mainAdmin" });
 };
 

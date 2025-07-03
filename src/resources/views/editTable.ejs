@@ -36,11 +36,6 @@
     </div>
 
     <div class="mb-3">
-        <label for="depositPrice" class="form-label">Giá đặt cọc</label>
-        <input type="number" id="depositPrice" name="depositPrice" class="form-control" value="<%= table.depositPrice %>" required>
-    </div>
-
-    <div class="mb-3">
         <label for="status" class="form-label">Trạng thái</label>
         <select id="status" name="status" class="form-select" required>
             <option value="AVAILABLE" <%= table.status === 'AVAILABLE' ? 'selected' : '' %>>Có sẵn</option>
