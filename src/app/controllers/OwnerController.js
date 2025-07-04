@@ -42,7 +42,7 @@ exports.getResOwnerDashboard = async (req, res) => {
         bankInfo: o.restaurant?.bankInfo || {},
       })),
       bankMap,
-      pagination: "" // nếu muốn có phân trang, thêm logic tại đây
+      pagination: "" 
     });
   } catch (err) {
     console.error("[ERROR] Loading RESOWNER dashboard:", err);
