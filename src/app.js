@@ -8,6 +8,19 @@ const sessionMiddleware = require("./config/session");
 const expressLayouts = require("express-ejs-layouts");
 const ownerRoutes = require("./routes/ownerRouter");
 
+const cron = require('node-cron');
+const Table = require('./app/models/Table');
+
+cron.schedule('0 0 * * *', async () => {
+  try {
+    console.log("🕛 Reset session bàn bắt đầu...");
+    const result = await Table.updateMany({}, { $set: { session: 1 } });
+    console.log(`✅ Reset session xong: ${result.modifiedCount} bàn`);
+  } catch (err) {
+    console.error("❌ Lỗi khi reset session bàn:", err);
+  }
+});
+
 const WebSocket = require("ws");
 const http = require("http");
 

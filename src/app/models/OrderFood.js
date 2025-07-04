@@ -12,7 +12,7 @@ const orderSchema = new Schema({
       quantity: { type: Number, required: true },
       statusOrder: {
         type: String,
-        enum: ["Pending", "In Progress", "Completed", "Cancelled"],
+        enum: ["Pending", "In Progress", "Completed", "Cancelled", "Hidden"],
         required: true,
       },
       typeOrder: { type: String, enum: ["Offline", "Online"], required: true },
@@ -40,6 +40,14 @@ const orderSchema = new Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "RestaurantInfor",
     required: true,
+  },
+  session: {
+    type: Number,
+    required: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
 });
 

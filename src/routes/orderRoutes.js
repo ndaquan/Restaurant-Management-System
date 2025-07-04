@@ -35,5 +35,7 @@ router.put(
   isPermissions(["RESOWNER", "KITCHENSTAFF", "WAITER", "RESMANAGER"]),
   orderController.chefChangeDishStatus
 );
-router.delete("/delete-dish/:orderId/:dishId", isAuth.requireAuth, orderController.deleteDish);
+router.put('/hide-dish/:orderId/:dishId', isAuth.requireAuth, orderController.hideDish);
+
+
 module.exports = router;

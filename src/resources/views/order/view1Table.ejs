@@ -1,7 +1,8 @@
 <div class="d-flex gap-3 p-4" style="height: 90vh; overflow: hidden;">
     <!-- Left Panel: Table Info -->
     <div class="w-50 border p-4 rounded shadow-sm d-flex flex-column" style="height: 100%;">
-        <h2 class="h5 fw-bold mb-3">Bàn số <%= table.idTable %>
+        <h2 class="h5 fw-bold mb-3">
+            Bàn số <%= table.idTable %> - <span class="text-muted">Session <%= table.session %></span>
         </h2>
         <div class="flex-grow-1" style="overflow: auto;">
             <table class="table table-bordered text-center" id="orderDataTable">
@@ -12,22 +13,22 @@
                         <th>Trạng thái</th>
                     </tr>
                 </thead>
-                <tbody>
-
-                </tbody>
+                <tbody></tbody>
             </table>
         </div>
-        <div class="row">
-            <div class="col-6" id="left-panel-total-price">
-                Tổng giá:
-            </div>
+        <div class="row mt-3">
+            <div class="col-6" id="left-panel-total-price">Tổng giá:</div>
             <div class="col-6">
                 <form class="thanh-toan" method="get">
-                    <button class="btn  btn-primary w-100" type="submit">Thanh toán</button>
+                    <button class="btn btn-primary w-100" type="submit">Thanh toán</button>
                 </form>
             </div>
+            <div class="mt-3">
+                <button onclick="resetTable('<%= table._id %>')" class="btn btn-danger w-100">
+                    Reset bàn (Khách mới)
+                </button>
+            </div>
         </div>
-
     </div>
 
     <!-- Right Panel: Menu List -->
@@ -68,20 +69,15 @@
     let toAddDishesPrice = 0;
     let tableId = '<%= table._id %>'
     const socket = new WebSocket("ws://localhost:3000");
-    socket.onopen = () => {
-        console.log("Connected to WebSocket server");
-    };
-
+    socket.onopen = () => console.log("🟢 Socket connected");
     socket.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        if (data.hasOwnProperty('tableId') && data.tableId === tableId) {
+        if (data.tableId === tableId) {
+            console.log("🔄 Cập nhật order bàn từ socket");
             getTableOrderInfo();
         }
     };
-
-    socket.onclose = () => {
-        console.log("Disconnected from WebSocket server");
-    };
+    socket.onclose = () => console.log("🔴 Socket disconnected");
     getTableOrderInfo();
     function addPrepareDishes(id, price) {
         toAddDished.push(id);
@@ -135,11 +131,20 @@
             })
     }
     function getTableOrderInfo() {
-        axios.get('/order/order-of-table/' + tableId)
+        console.log("🚀 Đang gọi API tới:", `/order/order-of-table/${tableId}`);
+        axios.get(`/order/order-of-table/${tableId}`)
             .then((res) => {
-                html = ''
+                console.log("📥 API trả về:", res.data);
+                let html = '';
                 let totalPrice = 0;
+                if (!res.data || !res.data.dishes || res.data.dishes.length === 0) {
+                console.warn("⚠️ Không có món ăn nào trong order!");
+            } else {
+                console.log("✅ Có", res.data.dishes.length, "món ăn trong order.");
+            }
                 for (let i = 0; i < res.data.dishes.length; i++) {
+                    console.log(`🍽️ Món ${i + 1}:`, res.data.dishes[i]);
+
                     html += `<tr>` +
                         `<td>${res.data.dishes[i].menuItem.foodName}</td>` +
                         `<td>${res.data.dishes[i].quantity}</td>` +
@@ -150,9 +155,29 @@
                 $("#orderDataTable tbody").html(html);
                 $(".thanh-toan").attr('action', '/payment/' + res.data._id + '/order');
                 const formattedTotal = totalPrice.toLocaleString("vi-VN");
+                console.log("💰 Tổng giá:", formattedTotal, "VND");
                 $("#left-panel-total-price").text('Tổng giá: ' + formattedTotal + ' VND');
             }).catch((err) => {
+                console.error("❌ Lỗi khi lấy thông tin order:", err.response ? err.response.data : err);
+
                 toastr.error(err.response.data.message)
             })
     }
+   function resetTable(tableId) {
+    console.log("🌐 Đường gọi API full:", `${window.location.origin}/tables/api/reset-table/${tableId}`);
+    fetch(`/admin/tables/api/reset-table/${tableId}`, { method: 'POST' })
+        .then(res => {
+            console.log("📥 Response status:", res.status);
+            return res.json();
+        })
+        .then(data => {
+            console.log("✅ Response data:", data);
+            toastr.success(data.message);
+            location.reload(); // 🔥 Reload để load session mới
+        })
+        .catch(err => {
+            console.error("❌ Lỗi fetch reset bàn:", err);
+            toastr.error("Lỗi reset bàn");
+        });
+}
 </script>

@@ -234,5 +234,21 @@ exports.addTables = (req, res) => {
         successMessage: null
     });
   };
+
+exports.resetTable = async (req, res) => {
+    console.log("📡 API reset bàn hit với ID:", req.params.id);
+    try {
+        const result = await Table.findByIdAndUpdate(req.params.id, { $inc: { session: 1 } });
+        if (!result) {
+            console.warn("⚠️ Không tìm thấy bàn với ID:", req.params.id);
+            return res.status(404).json({ success: false, message: "Không tìm thấy bàn" });
+        }
+        console.log("✅ Session mới đã được tăng cho bàn:", req.params.id);
+        res.json({ success: true, message: "Session mới bắt đầu." });
+    } catch (err) {
+        console.error("❌ Lỗi khi reset bàn:", err);
+        res.status(500).json({ success: false, message: "Lỗi reset bàn" });
+    }
+};
   
 

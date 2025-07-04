@@ -11,6 +11,7 @@ const TableSchema = new Schema({
     status: { type: String, enum: ['AVAILABLE', 'RESERVED', 'OCCUPIED'], required: true },
     type: {type: String, enum: ['NORMAL', 'VIP'] , required: true},
     restaurant: { type: mongoose.Schema.Types.ObjectId, ref: 'RestaurantInfor', required: true },
+    session: { type: Number, default: 1 },
 });
 
 TableSchema.index({ idTable: 1, restaurant: 1 }, { unique: true });

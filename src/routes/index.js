@@ -18,9 +18,6 @@ const adminRouter = require("./adminRouter");
 const checkSubscription = require("../app/middlewares/checkSubscription")
 
 const orderRoutes = require('./orderRoutes');
-
-  
-
 const tableRouter = require('./tablesRouter')
 const { getAllTable } = require('../app/controllers/TablesController');
 const editMenuRoutes = require('./editMenuRoutes');

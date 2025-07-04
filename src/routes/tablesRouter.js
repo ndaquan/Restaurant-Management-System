@@ -53,4 +53,15 @@ router.post(
   tablesController.deleteTable
 );
 
+router.post(
+  "/api/reset-table/:id",
+  isAuth.requireAuth,
+  isPermissions(["RESOWNER"]),
+  (req, res, next) => {
+      console.log("🛠 Route hit: POST /api/reset-table/" + req.params.id);
+      next();
+  },
+  tablesController.resetTable
+);
+
 module.exports = router;

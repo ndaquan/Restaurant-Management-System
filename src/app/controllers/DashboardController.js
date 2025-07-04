@@ -2,7 +2,138 @@ const User = require("../models/User")
 const Table = require("../models/Table");
 const Menu = require("../models/Menu");
 const Ingredient = require("../models/Ingredient");
-const Order = require("../models/OrderFood");
+const OrderFood = require("../models/OrderFood");
+const Revenue = require("../models/Revenue");
+const mongoose = require('mongoose');
+
+exports.getTableStatus = async (req, res) => {
+  try {
+    const total = await Table.countDocuments();
+    const available = await Table.countDocuments({ status: 'AVAILABLE' });
+    const occupied = await Table.countDocuments({ status: 'OCCUPIED' });
+    const reserved = await Table.countDocuments({ status: 'RESERVED' });
+
+    res.json({
+      total,
+      available,
+      occupied,
+      reserved
+    });
+  } catch (error) {
+    console.error('Lỗi lấy tình trạng bàn:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+exports.getTopDishes = async (req, res) => {
+  try {
+    const restaurantId = req.user?.restaurant;
+    if (!restaurantId) {
+      return res.status(400).json({ error: "Thiếu thông tin nhà hàng" });
+    }
+
+    const daysAgo = new Date();
+    daysAgo.setDate(daysAgo.getDate() - 30);
+
+    const orders = await OrderFood.aggregate([
+      { $match: { restaurant: new mongoose.Types.ObjectId(restaurantId), createdAt: { $gte: daysAgo } } },
+      { $unwind: "$dishes" },
+      { $group: { _id: "$dishes.menuItem", totalOrdered: { $sum: "$dishes.quantity" } } },
+      { $sort: { totalOrdered: -1 } },
+      { $limit: 5 },
+      {
+        $lookup: {
+          from: "menus",
+          localField: "_id",
+          foreignField: "_id",
+          as: "menuItem"
+        }
+      },
+      { $unwind: "$menuItem" },
+      {
+        $project: {
+          _id: 0,
+          name: "$menuItem.foodName",
+          totalOrdered: 1
+        }
+      }
+    ]);
+
+    console.log("Orders found:", orders);
+
+    res.json(orders);
+  } catch (err) {
+    console.error("Lỗi lấy top món ăn:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+exports.getRevenueByDay = async (req, res) => {
+  try {
+    const restaurantId = req.user?.restaurant;
+    if (!restaurantId) return res.status(400).json({ error: "Thiếu thông tin nhà hàng" });
+
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+
+    const revenue = await Revenue.aggregate([
+      { $match: { restaurant: new mongoose.Types.ObjectId(restaurantId), createdAt: { $gte: start, $lte: end }, status: "PAID" } },
+      { $group: { _id: null, totalRevenue: { $sum: "$amount" }, totalSessions: { $sum: 1 } } }
+    ]);
+
+    console.log("💰 Doanh thu hôm nay:", revenue);
+
+    res.json({
+      date: start.toISOString().split('T')[0],
+      totalRevenue: revenue[0]?.totalRevenue || 0,
+      totalSessions: revenue[0]?.totalSessions || 0
+    });
+  } catch (err) {
+    console.error("❌ Lỗi getRevenueByDay:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.getRevenueByMonth = async (req, res) => {
+  try {
+    const restaurantId = req.user?.restaurant;
+    if (!restaurantId) return res.status(400).json({ error: "Thiếu thông tin nhà hàng" });
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0, 23, 59, 59, 999);
+
+    const revenue = await Revenue.aggregate([
+      { $match: { restaurant: new mongoose.Types.ObjectId(restaurantId), createdAt: { $gte: firstDay, $lte: lastDay }, status: "PAID" } },
+      { $group: { _id: { day: { $dayOfMonth: "$createdAt" } }, dailyTotal: { $sum: "$amount" } } },
+      { $sort: { "_id.day": 1 } }
+    ]);
+
+    // Fill ngày trống
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const dailyRevenue = [];
+    for (let day = 1; day <= daysInMonth; day++) {
+      const found = revenue.find(r => r._id.day === day);
+      dailyRevenue.push({
+        day,
+        dailyTotal: found ? found.dailyTotal : 0
+      });
+    }
+
+    console.log("📅 Doanh thu tháng:", dailyRevenue);
+    res.json({
+      month: `${year}-${(month + 1).toString().padStart(2, '0')}`,
+      dailyRevenue
+    });
+  } catch (err) {
+    console.error("❌ Lỗi getRevenueByMonth:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
 exports.getDashboard = async (req, res) => {
   try {
@@ -29,54 +160,6 @@ exports.getDashboard = async (req, res) => {
     const totalIngredients = await Ingredient.countDocuments({ restaurant: restaurantId });
     console.log("Total ingredients:", totalIngredients);
 
-    // Pipeline cho Order (doanh thu từ đặt đồ ăn)
-    const orderRevenue = await Order.aggregate([
-      { $match: { statusPayment: "Paid", restaurant: restaurantId } },
-      {
-        $unwind: "$dishes" // Mở rộng mảng dishes
-      },
-      {
-        $project: {
-          orderDate: "$dishes.orderDate",
-          totalPrice: 1,
-          hasOrderDate: { $cond: { if: { $eq: [{ $type: "$dishes.orderDate" }, "date"] }, then: true, else: false } }, // Kiểm tra kiểu date
-          hasTotalPrice: { $ifNull: ["$totalPrice", 0] } // Mặc định 0 nếu null
-        }
-      },
-      {
-        $match: {
-          hasOrderDate: true
-        }
-      },
-      {
-        $group: {
-          _id: { $month: { $ifNull: ["$orderDate", new Date()] } },
-          total: { $sum: { $cond: { if: { $gt: ["$hasTotalPrice", 0] }, then: "$hasTotalPrice", else: 0 } } },
-          count: { $sum: 1 }
-        }
-      },
-      { $sort: { _id: 1 } },
-      { $match: { total: { $gt: 0 } } } // Lọc kết quả cuối cùng chỉ lấy tổng > 0
-    ]);
-    console.log("Raw order data with status Paid (first 10):", await Order.find({ statusPayment: "Paid" }).limit(10));
-    console.log("Processed order data after unwind and project:", await Order.aggregate([
-      { $match: { statusPayment: "Paid" } },
-      { $unwind: "$dishes" },
-      { $project: { orderDate: "$dishes.orderDate", totalPrice: 1 } }
-    ]).limit(10));
-    console.log("Order data after project:", await Order.aggregate([
-      { $match: { statusPayment: "Paid" } },
-      { $unwind: "$dishes" },
-      { $project: { orderDate: "$dishes.orderDate", totalPrice: 1, hasOrderDate: { $cond: { if: { $eq: [{ $type: "$dishes.orderDate" }, "date"] }, then: true, else: false } }, hasTotalPrice: { $ifNull: ["$totalPrice", 0] } } }
-    ]).limit(10));
-    console.log("Order data after match:", await Order.aggregate([
-      { $match: { statusPayment: "Paid" } },
-      { $unwind: "$dishes" },
-      { $project: { orderDate: "$dishes.orderDate", totalPrice: 1, hasOrderDate: { $cond: { if: { $eq: [{ $type: "$dishes.orderDate" }, "date"] }, then: true, else: false } }, hasTotalPrice: { $ifNull: ["$totalPrice", 0] } } },
-      { $match: { hasOrderDate: true } }
-    ]).limit(10));
-    console.log("Order revenue data after aggregation:", orderRevenue);
-
     // Truyền dữ liệu đến view
     res.render("admin", {
       layout: "layouts/mainAdmin",
@@ -85,10 +168,10 @@ exports.getDashboard = async (req, res) => {
       totalTables,
       totalDishes,
       totalIngredients,
-      orderRevenue: JSON.stringify(orderRevenue)
     });
   } catch (error) {
     console.error("Error fetching dashboard data:", error);
     res.status(500).send("Server Error");
   }
 };
+
