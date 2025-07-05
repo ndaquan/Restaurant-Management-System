@@ -16,6 +16,7 @@
       font-weight: bold;
       font-size: 2.2rem;
       background: linear-gradient(90deg, #43cea2, #185a9d);
+      background-clip: text;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       margin-bottom: 1rem;
@@ -35,6 +36,7 @@
       font-weight: 600;
       text-transform: uppercase;
       background: linear-gradient(90deg, #4e73df, #1cc88a);
+      background-clip: text;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       letter-spacing: 1px;
@@ -163,6 +165,13 @@
         const response = await fetch('/admin/api/table-status');
         const data = await response.json();
 
+        const total = data.available + data.occupied + data.reserved;
+        if (total === 0) {
+          document.getElementById('tableStatusChart').parentElement.innerHTML = 
+            "<p class='text-center text-muted'>Không có dữ liệu bàn để hiển thị</p>";
+          return; 
+        }
+
         const ctx = document.getElementById('tableStatusChart').getContext('2d');
         new Chart(ctx, {
           type: 'doughnut',
@@ -238,6 +247,12 @@
 
         const labels = data.map(dish => dish.name || "Không xác định");
         const dataset = data.map(dish => dish.totalOrdered);
+
+        if (dataset.length === 0 || dataset.reduce((a, b) => a + b, 0) === 0) {
+          document.getElementById('topDishesChart').parentElement.innerHTML =
+            "<p class='text-center text-muted'>Không có dữ liệu món ăn để hiển thị</p>";
+          return;
+        }
 
         const ctx = document.getElementById('topDishesChart').getContext('2d');
 

@@ -8,6 +8,7 @@
 <body>
     <div class="form-wrapper">
         <h2>Đăng ký</h2>
+        <h4>(Hãy chọn ngân hàng và điền đúng stk để hiện mã QR)</h4>
         <form action="/auth/sign-up" method="post">
             <% if (typeof trial !== "undefined" && trial === "true") { %>
                 <input type="hidden" name="trial" value="true" />

@@ -59,6 +59,14 @@ nav a img {
 .form-wrapper h2 {
     color: #fff;
     font-size: 1.8rem;
+    text-align: center; 
+    margin-bottom: 10px; 
+}
+
+.form-wrapper h4 {
+    color: #fff;
+    font-size: 0.83rem;
+    margin-bottom: 15px;
 }
 
 form .form-control {

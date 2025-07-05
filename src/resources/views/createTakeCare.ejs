@@ -54,6 +54,13 @@
     </div>
 
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date').setAttribute('min', today);
+        });
+    </script>
+
+    <script>
         // Hàm validate form
         function validateForm() {
             const staffSelect = document.getElementById('staffId');

@@ -150,7 +150,10 @@ exports.addDishes2Table = async (req, resp) => {
       session: currentSession,  
       statusPayment: "Pending"
     })
-      .populate("dishes.menuItem")
+      .populate({
+        path: "dishes.menuItem",
+        match: { restaurant: req.user.restaurant } 
+      })
       .populate("table")
       .populate("bookingTable");
 
